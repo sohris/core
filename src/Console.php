@@ -1,67 +1,66 @@
 <?php
+
 namespace Sohris\Core;
 
 use Exception;
+use Sohris\Core\Interfaces\ModuleInterface;
 
-class Console
+class Console implements ModuleInterface
 {
 
     private $messages = array();
 
-    public function start()
+    private $stdin;
+    private $stdout;
+    public function __construct(Server $server)
     {
-        $exit = false;
-        while (!$exit) {
-            $line = "";
-            if (PHP_OS == 'WINNT') {
-                echo '$ ';
-                $line = stream_get_line(STDIN, 1024, PHP_EOL);
-            } else {
-                $line = readline('$ ');
-            }
 
-            $exit = $this->processLine($line);
-        }
-        exit;
+        $loop = Loop::getLoop();
+
+        $this->stdin = new \React\Stream\ReadableResourceStream(STDIN, $loop);
+        $this->stdout = new \React\Stream\WritableResourceStream(STDOUT, $loop);
+        //Inicia a leitura do console apenas quando o servidor estiver rodando
+        $server->on("server.running", function ()  {
+            $this->stdin->on('data', function ($data) {
+                if ($this->stdout->isWritable()) {
+                    $this->stdout->write(trim($this->processLine(trim($data))) . PHP_EOL);
+                }
+            });
+        });
     }
 
     private function processLine($line)
     {
         switch ($line) {
             case "status":
-                $this->showStatus();
+                return $this->showStatus();
                 break;
             case "exit":
                 return true;
                 break;
+            case "clear":
+                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                    system("cls");
+                    break;
+                }
+                system("clear");
+
+                break;
             default:
-                echo "Function not implemented";
+                return "Function not implemented" . PHP_EOL;
         }
         return false;
     }
 
     private function showStatus()
     {
-
-        $status = array(
-            "real_memory" => Utils::bytesToHuman(memory_get_usage(false)),
-            "total_memory" => Utils::bytesToHuman(memory_get_usage(true)),
-            "pid" => getmypid(),
-            "loadavg" => 0
-            
-        );
-
-        try{
+        $status = json_decode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . Server::FILE_SYSTEM_MONITOR), true);
+        try {
             $output = Utils::loadTemplate("Status", $status);
-        }catch(Exception $e)
-        {   
-            echo $e->getMessage();
-            return;
+        } catch (Exception $e) {
+            return $e->getMessage();
         }
 
-        echo $output . PHP_EOL;
-
-
+        return $output;
     }
-
 }

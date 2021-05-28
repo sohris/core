@@ -1,11 +1,11 @@
 <?php
-namespace Sohris\Core\Interface;
+namespace Sohris\Core\Interfaces;
 
-use Sohris\Core\Loop;
+use Sohris\Core\Server;
 
 interface ModuleInterface
 {
 
-    public function __construct(Loop $loop);
+    public function __construct(Server $server);
 
 }
