@@ -8,7 +8,7 @@ class Console
 
     private $messages = array();
 
-    public function readLine()
+    public function start()
     {
         $exit = false;
         while (!$exit) {
