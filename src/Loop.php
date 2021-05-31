@@ -28,4 +28,8 @@ class Loop
 
     }
 
+    public static function newLoop() : \React\EventLoop\LoopInterface
+    {
+        return Factory::create();
+    }
 }

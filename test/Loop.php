@@ -1,10 +1,11 @@
-
 <?php
+
+
 include "vendor/autoload.php";
 
-
+use Sohris\Core\Console;
 use Sohris\Core\Server;
 
+$cons = new Server;
 
-$server = new Server;
-$server->run();
+$cons->run();

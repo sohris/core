@@ -1,1 +1,3 @@
-PID [{pid}] | CPU-Load [{loadavg}] | Memory [{real_memory}/{total_memory}] | 
+Update {last_update} 
+PID [{pid}] | 
+Memory [{memory_percent}] {real_memory}/{total_memory} | 

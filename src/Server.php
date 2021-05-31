@@ -8,7 +8,7 @@ use Exception;
 class Server
 {
 
-    const EVENTS_ENABLED = array("server.start", "server.running", "server.error", "server.stop");
+    const EVENTS_ENABLED = array("server.start", "running", "server.error", "server.stop");
     const FILE_SYSTEM_MONITOR = "system_monitor";
     const MODULE_INTERFACE = "Sohris\Core\Interfaces\ModuleInterface";
 
@@ -26,8 +26,25 @@ class Server
 
     private $sys_log_file;
 
+    private static $server;
+
+    public static function getServer() : Server
+    {
+        if(is_null(self::$server))
+        {
+            echo "creatind" . PHP_EOL;
+            return new Server;
+        }
+
+        return self::$server;
+
+    }
+
     public function __construct()
     {
+
+        self::$server = $this;
+
         $this->loop = Loop::getLoop();
 
         $this->events = new EventEmitter;
@@ -69,7 +86,9 @@ class Server
 
         foreach ($classes as $class) {
             if (in_array(self::MODULE_INTERFACE, class_implements($class))) {
-                $this->modules[] = new Module($class, $this);
+                $module = new Module($class);
+                $this->modules[] = $module;
+
             }
         }
 
@@ -77,13 +96,15 @@ class Server
 
     public function run()
     {
-        $this->events->emit("server.running");
+        $this->events->emit("running");
         $this->loop->run();
+ 
     }
 
     public function on(string $event, callable $func)
     {
 
+        echo $event.PHP_EOL;
         if (is_null($func)) {
             throw new Exception("Callable can not be NULL!");
         }
@@ -92,9 +113,6 @@ class Server
             throw new Exception("Event $event is not register!");
         }
 
-        $this->events->on($event, function () use ($func) {
-            
-            $func;
-        });
+        $this->events->on($event, $func);
     }
 }

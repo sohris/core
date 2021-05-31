@@ -10,11 +10,12 @@ class Module
 
     private $active = false;
 
-    public function __construct(string $module, Server $server)
+    private $loop;
+
+    public function __construct(string $module)
     {
-        $this->module = new $module($server);   
+        $this->loop = Loop::getLoop();
+        $this->module = new $module($this->loop);   
     }
-
-
     
 }
