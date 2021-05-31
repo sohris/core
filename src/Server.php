@@ -32,7 +32,6 @@ class Server
     {
         if(is_null(self::$server))
         {
-            echo "creatind" . PHP_EOL;
             return new Server;
         }
 
@@ -104,7 +103,6 @@ class Server
     public function on(string $event, callable $func)
     {
 
-        echo $event.PHP_EOL;
         if (is_null($func)) {
             throw new Exception("Callable can not be NULL!");
         }

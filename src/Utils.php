@@ -26,34 +26,11 @@ class Utils
     
     public static function loadLocalClasses()
     {
-        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(__DIR__ ));
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath("./src")));
         $phpFiles = new \RegexIterator($files, '/\.php$/');
         foreach ($phpFiles as $pf) {
             include_once $pf->getRealPath();
         }
-    }
-
-    public static function loadTemplate(string $source, array $variables = array())
-    {
-        $path = __DIR__ . DIRECTORY_SEPARATOR . "Template" . DIRECTORY_SEPARATOR . $source;
-
-        $file = file_get_contents($path);
-
-        if(!$file)
-        {
-            throw new Exception("Can't find $source");
-        }
-
-        if(!empty($variables))
-        {
-            foreach($variables as $key => $value)
-            {
-                $file = str_replace("{{$key}}", $value, $file);
-            }
-        }
-
-        return $file;
-
     }
 
     public static function bytesToHuman($bytes)
@@ -87,10 +64,5 @@ class Utils
                 }
 
         }
-    }
-
-    public static function getStreamFile(string $path)
-    {
-
     }
 }
