@@ -3,14 +3,13 @@
 namespace Sohris\Core;
 
 use Evenement\EventEmitter;
-use Exception;
+use Sohris\Core\Exceptions\ServerException;
 
 class Server
 {
 
     const EVENTS_ENABLED = array("server.start", "running", "server.error", "server.stop");
     const FILE_SYSTEM_MONITOR = "system_monitor";
-    const MODULE_INTERFACE = "Sohris\Core\Interfaces\ModuleInterface";
 
     /**
      * @var \React\EventLoop\LoopInterface
@@ -22,21 +21,19 @@ class Server
      */
     private $events;
 
-    private $modules = array();
+    private $components = array();
 
     private $sys_log_file;
 
     private static $server;
 
-    public static function getServer() : Server
+    public static function getServer(): Server
     {
-        if(is_null(self::$server))
-        {
+        if (is_null(self::$server)) {
             return new Server;
         }
 
         return self::$server;
-
     }
 
     public function __construct()
@@ -48,11 +45,10 @@ class Server
 
         $this->events = new EventEmitter;
 
-        Utils::loadLocalClasses();
-        Utils::loadVendorClasses();
+        Loader::loadClasses();
 
         $this->configSystemMonitor();
-        $this->loadModules();
+        $this->loadComponents();
     }
 
     private function configSystemMonitor()
@@ -79,36 +75,31 @@ class Server
         );
     }
 
-    private function loadModules()
+    private function loadComponents()
     {
-        $classes = get_declared_classes();
+        $classes = Loader::getComponentsClass();
 
         foreach ($classes as $class) {
-            if (in_array(self::MODULE_INTERFACE, class_implements($class))) {
-                $module = new Module($class);
-                $this->modules[] = $module;
-
-            }
+            $component = new Component($class);
+            $this->components[] = $component;
         }
-
     }
 
     public function run()
     {
         $this->events->emit("running");
         $this->loop->run();
- 
     }
 
     public function on(string $event, callable $func)
     {
 
         if (is_null($func)) {
-            throw new Exception("Callable can not be NULL!");
+            throw new ServerException("Callable can not be NULL!");
         }
 
         if (!in_array($event, self::EVENTS_ENABLED)) {
-            throw new Exception("Event $event is not register!");
+            throw new ServerException("Event $event is not register!");
         }
 
         $this->events->on($event, $func);

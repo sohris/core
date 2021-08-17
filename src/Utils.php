@@ -18,7 +18,6 @@ class Utils
             }
         }
         $classLoader = $autoloaderClassName::getLoader();
-        
         foreach ($classLoader->getClassMap() as $path) {
            require_once $path;
         }
@@ -64,5 +63,12 @@ class Utils
                 }
 
         }
+    }
+
+    public static function getConfig(string $config)
+    {
+
+        
+
     }
 }
