@@ -8,7 +8,7 @@ use Sohris\Core\Exceptions\ServerException;
 class Server
 {
 
-    const EVENTS_ENABLED = array("server.start", "running", "server.error", "server.stop");
+    const EVENTS_ENABLED = array("beforeStart","start", "running", "error", "stop", "pause");
     const FILE_SYSTEM_MONITOR = "system_monitor";
 
     /**
@@ -49,6 +49,8 @@ class Server
 
         $this->configSystemMonitor();
         $this->loadComponents();
+
+        $this->events->emit("beforeStart");
     }
 
     private function configSystemMonitor()

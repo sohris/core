@@ -3,7 +3,7 @@
 namespace Sohris\Core\Components;
 
 use React\EventLoop\LoopInterface;
-use Sohris\Core\Interfaces\AbstractComponent;
+use Sohris\Core\AbstractComponent;
 use Sohris\Core\Utils;
 
 class Logger extends AbstractComponent
@@ -13,20 +13,35 @@ class Logger extends AbstractComponent
 
     public function __construct(LoopInterface $loop)
     {
-
+        $this->priority = 10;
+        
+        Utils::getBaseConfig();
         self::$loop = $loop;
         
         
     }
 
+
+    
+
     private static function log(string $type, string $message)
     {
         if(is_null(self::$log_dir))
-            self::$log_dir = Utils::getConfig("system.log_dir");
+            self::$log_dir = Utils::getBaseConfig();
 
         $date = date("Y-m-d hh:ii:ss");
 
 
+    }
+
+    public static function debug(string $message)
+    {
+
+    }
+
+    public static function info(string $message)
+    {
+        
     }
 
     public static function message(string $message)

@@ -5,7 +5,7 @@ namespace Sohris\Core;
 class Loader 
 {    
     
-    const COMPONENT_INTERFACE = "Sohris\Core\Interfaces\AbstractComponent";
+    const COMPONENT_INTERFACE = "Sohris\Core\AbstractComponent";
 
     private static $component_class = array();
 

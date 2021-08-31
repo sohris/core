@@ -5,7 +5,9 @@ use Exception;
 
 class Utils
 {
+    const BASE_CONFIG_FILE = "./sohris.json";
 
+    private static $default_configs = null;
     
     public static function loadVendorClasses()
     {
@@ -39,6 +41,12 @@ class Utils
         return round($bytes, 2) . ' ' . $units[$i];
     }
 
+    public static function checkFileExists(string $file_path)
+    {   
+        return file_exists($file_path);
+
+    }
+
     public static function checkFolder($path, $opt = null)
     {
         switch ($opt) {
@@ -65,9 +73,22 @@ class Utils
         }
     }
 
-    public static function getConfig(string $config)
+    public static function getBaseConfig()
     {
 
+        if(!is_null(self::$default_configs))
+            return self::$default_configs;
+
+        if(!self::checkFileExists(self::BASE_CONFIG_FILE))
+        {
+            throw new Exception("Sohris config file (sohris.json), is not readable!");
+            
+        }
+
+        self::$default_configs = json_decode(file_get_contents(self::BASE_CONFIG_FILE),true);
+        
+        
+        return self::$default_configs;
         
 
     }
