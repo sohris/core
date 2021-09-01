@@ -1,2 +1,5 @@
 /vendor/
 /test/
+/config/
+./sohris.json
+sohris.json
