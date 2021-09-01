@@ -90,6 +90,27 @@ class Utils
         
         return self::$default_configs;
         
+    }
+
+    public static function getFilesInPath(string $dir): array
+    {
+        if(!is_dir($dir))
+        {
+            throw new Exception("Invalid Dir ($dir)");
+        }
+
+        $files = scandir($dir);
+
+        return array_filter($files, fn($file) => !in_array($file, ['.', '..']));
+
+    }
+
+    public static function getConfig(string $config_name)
+    {
+        $config = self::getBaseConfig();
+        if(!key_exists($config_name, $config))
+            return false;
+        return $config[$config_name];
 
     }
 }
