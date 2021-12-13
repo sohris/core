@@ -35,6 +35,12 @@ class Utils
         foreach ($phpFiles as $pf) {
             include_once $pf->getRealPath();
         }
+        
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath("./vendor/sohris")));
+        $phpFiles = new \RegexIterator($files, '/\.php$/');
+        foreach ($phpFiles as $pf) {
+            include_once $pf->getRealPath();
+        }
     }
 
     public static function bytesToHuman($bytes)
