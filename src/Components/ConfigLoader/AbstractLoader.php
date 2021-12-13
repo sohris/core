@@ -48,8 +48,7 @@ abstract class AbstractLoader
     protected function getAndCheckContentFile(string $path, string $extension)
     {
         $info = pathinfo($path);
-
-        if(str_replace('.', '',$info['extension']) != str_replace('.', '',$extension))
+        if($info['extension'] != $extension)
             return false;
 
         return file_get_contents($path);

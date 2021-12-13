@@ -3,3 +3,5 @@
 /config/
 ./sohris.json
 sohris.json
+app.php
+.env

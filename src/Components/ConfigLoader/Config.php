@@ -18,7 +18,7 @@ class Config extends AbstractComponent
     public function __construct(LoopInterface $loop)
     {
         $this->server = Server::getServer();
-        $this->server->on("beforeStart",fn() => $this->configureConfigs());
+        $this->server->on("server.beforeStart",fn() => $this->configureConfigs());
 
     }
 

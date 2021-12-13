@@ -3,12 +3,15 @@
 namespace Sohris\Core;
 
 use Evenement\EventEmitter;
+use Exception;
+use Sohris\Core\Components\Logger;
 use Sohris\Core\Exceptions\ServerException;
+use Throwable;
 
 class Server
 {
 
-    const EVENTS_ENABLED = array("beforeStart","start", "running", "error", "stop", "pause");
+    const EVENTS_ENABLED = array("server.beforeStart", "server.start", "server.running", "server.error", "server.stop", "server.pause", "components.loaded", "components.installed", "components.started", "components.register");
     const FILE_SYSTEM_MONITOR = "system_monitor";
 
     /**
@@ -22,6 +25,8 @@ class Server
     private $events;
 
     private $components = array();
+
+    private $root_dir = '';
 
     private $sys_log_file;
 
@@ -47,15 +52,20 @@ class Server
 
         Loader::loadClasses();
 
-        $this->configSystemMonitor();
+        //$this->configSystemMonitor();
         $this->loadComponents();
 
-        $this->events->emit("beforeStart");
+        $this->events->emit("server.beforeStart");
+    }
+
+    public function setRootDir(string $dir)
+    {
+        $this->root_dir = realpath($dir);
     }
 
     private function configSystemMonitor()
     {
-        $file_path = __DIR__ . DIRECTORY_SEPARATOR . self::FILE_SYSTEM_MONITOR;
+        $file_path = $this->root_dir . DIRECTORY_SEPARATOR . self::FILE_SYSTEM_MONITOR;
 
         $this->loop->addPeriodicTimer(
             5,
@@ -82,14 +92,50 @@ class Server
         $classes = Loader::getComponentsClass();
 
         foreach ($classes as $class) {
-            $component = new Component($class);
-            $this->components[] = $component;
+            $this->register_components[] = $class;
         }
+
+        sort($this->register_components);
+
+        $this->events->emit('components.register');
+
+        foreach ($this->register_components as $key => $component) {
+            $this->components[$key] = new Component($component);
+        }
+        $this->events->emit('components.loaded');
+    }
+
+    private function installComponents()
+    {
+        try {
+
+            foreach ($this->components as $component) {
+                $component->install();
+            }
+        } catch (Throwable $e) {
+            Logger::critical($e->getMessage());
+        }
+
+        Logger::debug(sizeof($this->components) . " components Installed");
+        $this->events->emit("components.installed");
+    }
+
+
+    private function startComponents()
+    {
+        foreach ($this->components as $component) {
+            $component->start();
+        }
+
+        $this->events->emit("components.started");
     }
 
     public function run()
     {
-        $this->events->emit("running");
+
+        $this->installComponents();
+        $this->startComponents();
+        $this->events->emit("server.running");
         $this->loop->run();
     }
 

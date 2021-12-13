@@ -14,4 +14,15 @@ abstract class AbstractComponent
     public function getName(){
         return $this->name;
     }
+
+    public function install()
+    {
+
+    }
+
+    public function start()
+    {
+        
+    }
+
 }

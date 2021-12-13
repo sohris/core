@@ -1,4 +1,5 @@
 <?php
+
 namespace Sohris\Core;
 
 use Exception;
@@ -8,12 +9,14 @@ class Utils
     const BASE_CONFIG_FILE = "./sohris.json";
 
     private static $default_configs = null;
-    
+    private static $config_files = array();
+
+
     public static function loadVendorClasses()
     {
         $res = get_declared_classes();
         $autoloaderClassName = '';
-        foreach ( $res as $className) {
+        foreach ($res as $className) {
             if (strpos($className, 'ComposerAutoloaderInit') === 0) {
                 $autoloaderClassName = $className; // ComposerAutoloaderInit323a579f2019d15e328dd7fec58d8284 for me
                 break;
@@ -21,10 +24,10 @@ class Utils
         }
         $classLoader = $autoloaderClassName::getLoader();
         foreach ($classLoader->getClassMap() as $path) {
-           require_once $path;
+            require_once $path;
         }
     }
-    
+
     public static function loadLocalClasses()
     {
         $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath("./src")));
@@ -42,9 +45,8 @@ class Utils
     }
 
     public static function checkFileExists(string $file_path)
-    {   
+    {
         return file_exists($file_path);
-
     }
 
     public static function checkFolder($path, $opt = null)
@@ -58,7 +60,6 @@ class Utils
                     if (!is_dir($pathname)) {
                         mkdir($pathname);
                     }
-
                 }
                 return true;
                 break;
@@ -69,48 +70,55 @@ class Utils
                 } else {
                     return false;
                 }
-
         }
     }
 
     public static function getBaseConfig()
     {
 
-        if(!is_null(self::$default_configs))
+        if (!is_null(self::$default_configs))
             return self::$default_configs;
 
-        if(!self::checkFileExists(self::BASE_CONFIG_FILE))
-        {
+        if (!self::checkFileExists(self::BASE_CONFIG_FILE)) {
             throw new Exception("Sohris config file (sohris.json), is not readable!");
-            
         }
 
-        self::$default_configs = json_decode(file_get_contents(self::BASE_CONFIG_FILE),true);
-        
-        
+        self::$default_configs = json_decode(file_get_contents(self::BASE_CONFIG_FILE), true);
+
+
         return self::$default_configs;
-        
     }
 
     public static function getFilesInPath(string $dir): array
     {
-        if(!is_dir($dir))
-        {
+        if (!is_dir($dir)) {
             throw new Exception("Invalid Dir ($dir)");
         }
 
         $files = scandir($dir);
 
-        return array_filter($files, fn($file) => !in_array($file, ['.', '..']));
-
+        return array_filter($files, fn ($file) => !in_array($file, ['.', '..']));
     }
 
     public static function getConfig(string $config_name)
     {
         $config = self::getBaseConfig();
-        if(!key_exists($config_name, $config))
+        if (!key_exists($config_name, $config))
             return false;
         return $config[$config_name];
+    }
+    public static function getConfigFiles(string $config)
+    {
+        if (!isset(self::$config_files[$config])) {
 
+            $file = file_get_contents("./configs/$config.json");
+
+            if (empty($file))
+                throw new Exception("Empty config '$config'");
+
+            self::$config_files[$config] = json_decode($file, true);
+        }
+
+        return self::$config_files[$config];
     }
 }
