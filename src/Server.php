@@ -28,7 +28,7 @@ class Server
 
     private $root_dir = '';
 
-    private $sys_log_file;
+    private $logger;
 
     private static $server;
 
@@ -44,10 +44,11 @@ class Server
     public function __construct()
     {
 
+
         self::$server = $this;
 
         $this->loop = Loop::getLoop();
-
+        $this->logger = new Logger();
         $this->events = new EventEmitter;
 
         Loader::loadClasses();
@@ -113,10 +114,10 @@ class Server
                 $component->install();
             }
         } catch (Throwable $e) {
-            Logger::critical($e->getMessage());
+            $this->logger->critical($e->getMessage());
         }
 
-        Logger::debug(sizeof($this->components) . " components Installed");
+        $this->logger->critical(sizeof($this->components) . " components Installed");
         $this->events->emit("components.installed");
     }
 

@@ -35,11 +35,12 @@ class Utils
         foreach ($phpFiles as $pf) {
             include_once $pf->getRealPath();
         }
-        
-        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath("./vendor/sohris")));
-        $phpFiles = new \RegexIterator($files, '/\.php$/');
-        foreach ($phpFiles as $pf) {
-            include_once $pf->getRealPath();
+        if (self::checkFileExists(realpath("./vendor/sohris"))) {
+            $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath("./vendor/sohris")));
+            $phpFiles = new \RegexIterator($files, '/\.php$/');
+            foreach ($phpFiles as $pf) {
+                include_once $pf->getRealPath();
+            }
         }
     }
 
@@ -116,8 +117,8 @@ class Utils
     public static function getConfigFiles(string $config)
     {
         if (!isset(self::$config_files[$config])) {
-
-            $file = file_get_contents("./configs/$config.json");
+            $base = self::getConfig('config_dir');
+            $file = file_get_contents($base . "/$config.json");
 
             if (empty($file))
                 throw new Exception("Empty config '$config'");
