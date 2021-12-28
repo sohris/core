@@ -3,10 +3,9 @@
 namespace Sohris\Core;
 
 use Evenement\EventEmitter;
-use Exception;
+use React\EventLoop\Loop;
 use Sohris\Core\Components\Logger;
 use Sohris\Core\Exceptions\ServerException;
-use Throwable;
 
 class Server
 {
@@ -26,28 +25,18 @@ class Server
 
     private $components = array();
 
-    private $root_dir = '';
-
     private $logger;
 
     private static $server;
 
-    public static function getServer(): Server
+    private static $root_dir = '';
+
+    public function __construct(string $root_dir = "./")
     {
-        if (is_null(self::$server)) {
-            return new Server;
-        }
-
-        return self::$server;
-    }
-
-    public function __construct()
-    {
-
-
         self::$server = $this;
+        self::$root_dir = realpath($root_dir);
 
-        $this->loop = Loop::getLoop();
+        $this->loop = Loop::get();
         $this->logger = new Logger();
         $this->events = new EventEmitter;
 
@@ -58,9 +47,19 @@ class Server
         $this->events->emit("server.beforeStart");
     }
 
-    public function setRootDir(string $dir)
+    public static function getServer(): Server
     {
-        $this->root_dir = realpath($dir);
+        if (is_null(self::$server)) {
+            return new Server;
+        }
+
+        return self::$server;
+    }
+
+
+    public static function getRootDir()
+    {
+        return self::$root_dir;
     }
 
     private function configSystemMonitor()
@@ -112,8 +111,9 @@ class Server
             foreach ($this->components as $component) {
                 $component->install();
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->critical($e->getMessage());
+            echo "[ERROR] " . $e->getMessage() . PHP_EOL;
         }
 
         $this->logger->critical(sizeof($this->components) . " components Installed");
