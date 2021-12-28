@@ -53,7 +53,6 @@ class Server
 
         Loader::loadClasses();
 
-        //$this->configSystemMonitor();
         $this->loadComponents();
 
         $this->events->emit("server.beforeStart");
@@ -120,7 +119,6 @@ class Server
         $this->logger->critical(sizeof($this->components) . " components Installed");
         $this->events->emit("components.installed");
     }
-
 
     private function startComponents()
     {

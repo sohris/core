@@ -33,6 +33,12 @@ class Logger extends MonologLogger
 
     private function createLogFiles()
     {
+
+        if(!is_dir($this->log_path))
+        {
+            mkdir($this->log_path);
+        }
+
         if(!is_file($this->log_path . "/" . $this->component_name)){
             touch($this->log_path . "/" . $this->component_name);
         }

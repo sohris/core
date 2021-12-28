@@ -19,7 +19,7 @@ class Component
     public function __construct(string $component)
     {
         $this->loop = Loop::getLoop();
-        $this->component = new $component($this->loop);
+        $this->component = new $component();
         $this->component->getName();
         $this->events = new EventEmitter;
     }

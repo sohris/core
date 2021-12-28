@@ -2,6 +2,7 @@
 namespace Sohris\Core;
 
 use React\EventLoop\Factory;
+use React\EventLoop\Loop as EventLoopLoop;
 use Sohris\Core\Exceptions\LoopException;
 
 class Loop
@@ -21,7 +22,7 @@ class Loop
 
         if(is_null(self::$loop))
         {
-            self::$loop = Factory::create();
+            self::$loop = EventLoopLoop::get();
         }
 
         return self::$loop;
@@ -30,6 +31,6 @@ class Loop
 
     public static function newLoop() : \React\EventLoop\LoopInterface
     {
-        return Factory::create();
+        return EventLoopLoop::get();
     }
 }

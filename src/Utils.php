@@ -114,6 +114,7 @@ class Utils
             return false;
         return $config[$config_name];
     }
+    
     public static function getConfigFiles(string $config)
     {
         if (!isset(self::$config_files[$config])) {
@@ -127,5 +128,11 @@ class Utils
         }
 
         return self::$config_files[$config];
+    }
+
+    
+    public static function getAutoload()
+    {
+        return "./vendor/autoload.php";
     }
 }
