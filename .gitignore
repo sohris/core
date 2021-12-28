@@ -1,6 +1,7 @@
 /vendor/
 /test/
 /config/
+/log/
 ./sohris.json
 sohris.json
 app.php

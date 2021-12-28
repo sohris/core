@@ -9,8 +9,6 @@ abstract class AbstractComponent
 
     public $priority = 0;
     
-    public abstract function __construct(LoopInterface $loop);
-
     public function getName(){
         return $this->name;
     }
