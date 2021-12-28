@@ -135,4 +135,10 @@ class Utils
     {
         return "./vendor/autoload.php";
     }
+
+    public static function microtimeFloat()
+    {
+        list($usec, $sec) = explode(" ", microtime());
+        return ((float)$usec + (float)$sec);
+    }
 }
