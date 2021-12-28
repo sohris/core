@@ -4,6 +4,7 @@ namespace Sohris\Core;
 
 
 use Evenement\EventEmitter;
+use React\EventLoop\Loop;
 use Sohris\Core\Exceptions\ComponentException;
 
 class Component
@@ -18,7 +19,7 @@ class Component
 
     public function __construct(string $component)
     {
-        $this->loop = Loop::getLoop();
+        $this->loop = Loop::get();
         $this->component = new $component();
         $this->component->getName();
         $this->events = new EventEmitter;
