@@ -6,7 +6,7 @@ use Exception;
 
 class Utils
 {
-    const BASE_CONFIG_FILE = "./sohris.json";
+    const BASE_CONFIG_FILE = "sohris.json";
 
     private static $default_configs = null;
     private static $config_files = array();
@@ -35,8 +35,8 @@ class Utils
         foreach ($phpFiles as $pf) {
             include_once $pf->getRealPath();
         }
-        if (self::checkFileExists(realpath("./vendor/sohris"))) {
-            $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath("./vendor/sohris")));
+        if (self::checkFileExists(realpath(Server::getRootDir() . DIRECTORY_SEPARATOR . "/vendor/sohris"))) {
+            $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(Server::getRootDir() . DIRECTORY_SEPARATOR . "/vendor/sohris")));
             $phpFiles = new \RegexIterator($files, '/\.php$/');
             foreach ($phpFiles as $pf) {
                 include_once $pf->getRealPath();
@@ -86,11 +86,11 @@ class Utils
         if (!is_null(self::$default_configs))
             return self::$default_configs;
 
-        if (!self::checkFileExists(self::BASE_CONFIG_FILE)) {
+        if (!self::checkFileExists(Server::getRootDir() . DIRECTORY_SEPARATOR . self::BASE_CONFIG_FILE)) {
             throw new Exception("Sohris config file (sohris.json), is not readable!");
         }
 
-        self::$default_configs = json_decode(file_get_contents(self::BASE_CONFIG_FILE), true);
+        self::$default_configs = json_decode(file_get_contents(Server::getRootDir() . DIRECTORY_SEPARATOR . self::BASE_CONFIG_FILE), true);
 
 
         return self::$default_configs;
@@ -133,7 +133,7 @@ class Utils
     
     public static function getAutoload()
     {
-        return "./vendor/autoload.php";
+        return Server::getRootDir() . DIRECTORY_SEPARATOR . "/vendor/autoload.php";
     }
 
     public static function microtimeFloat()
