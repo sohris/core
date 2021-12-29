@@ -24,7 +24,7 @@ class Config extends AbstractComponent
 
     private function configureConfigs()
     {
-        $config_file = Utils::getConfig('config_dir');
+        $config_file = Server::getRootDir() . DIRECTORY_SEPARATOR . "/config";
         if(!$config_file || !is_dir($config_file))
         {
             throw new Exception("Can not set config_dir setup");

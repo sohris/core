@@ -6,7 +6,6 @@ use Exception;
 
 class Utils
 {
-    const BASE_CONFIG_FILE = "sohris.json";
 
     private static $default_configs = null;
     private static $config_files = array();
@@ -30,7 +29,7 @@ class Utils
 
     public static function loadLocalClasses()
     {
-        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath("./src")));
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(Server::getRootDir() . DIRECTORY_SEPARATOR . "/src")));
         $phpFiles = new \RegexIterator($files, '/\.php$/');
         foreach ($phpFiles as $pf) {
             include_once $pf->getRealPath();
@@ -80,22 +79,6 @@ class Utils
         }
     }
 
-    public static function getBaseConfig()
-    {
-
-        if (!is_null(self::$default_configs))
-            return self::$default_configs;
-
-        if (!self::checkFileExists(Server::getRootDir() . DIRECTORY_SEPARATOR . self::BASE_CONFIG_FILE)) {
-            throw new Exception("Sohris config file (sohris.json), is not readable!");
-        }
-
-        self::$default_configs = json_decode(file_get_contents(Server::getRootDir() . DIRECTORY_SEPARATOR . self::BASE_CONFIG_FILE), true);
-
-
-        return self::$default_configs;
-    }
-
     public static function getFilesInPath(string $dir): array
     {
         if (!is_dir($dir)) {
@@ -107,19 +90,10 @@ class Utils
         return array_filter($files, fn ($file) => !in_array($file, ['.', '..']));
     }
 
-    public static function getConfig(string $config_name)
-    {
-        $config = self::getBaseConfig();
-        if (!key_exists($config_name, $config))
-            return false;
-        return $config[$config_name];
-    }
-    
     public static function getConfigFiles(string $config)
     {
         if (!isset(self::$config_files[$config])) {
-            $base = self::getConfig('config_dir');
-            $file = file_get_contents($base . "/$config.json");
+            $file = file_get_contents(Server::getRootDir() . DIRECTORY_SEPARATOR . "config/$config.json");
 
             if (empty($file))
                 throw new Exception("Empty config '$config'");
