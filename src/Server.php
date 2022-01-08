@@ -12,7 +12,7 @@ class Server
 
     const EVENTS_ENABLED = array("server.beforeStart", "server.start", "server.running", "server.error", "server.stop", "server.pause", "components.loaded", "components.installed", "components.started", "components.register");
     const FILE_SYSTEM_MONITOR = "system_monitor";
-    const COMPONENT_NAME = "Sohris\Core\AbstractComponent";
+    const COMPONENT_NAME = "Sohris\Core\Component\AbstractComponent";
 
 
     /**
