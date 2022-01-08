@@ -72,7 +72,7 @@ class Utils
         return self::$config_files[$config];
     }
 
-    
+
     public static function getAutoload()
     {
         return Server::getRootDir() . DIRECTORY_SEPARATOR . "/vendor/autoload.php";
@@ -86,13 +86,30 @@ class Utils
 
     public static function getPHPFilesInDirectory(string $path)
     {
-        if(!is_dir($path))
-        {
+        if (!is_dir($path)) {
             return [];
         }
 
         $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path));
         $phpFiles = new \RegexIterator($files, '/\.php$/');
         return iterator_to_array($phpFiles);
+    }
+
+    public static function recursiveCreateFolder($path)
+    {
+        if (is_dir($path)) {
+            return;
+        }
+
+        $next_recurcion = substr($path, 0 ,strripos($path, DIRECTORY_SEPARATOR));
+
+        if (!$next_recurcion)
+            return;
+
+        self::recursiveCreateFolder($next_recurcion);
+
+        mkdir($path);
+
+        return;
     }
 }

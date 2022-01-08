@@ -1,3 +1,4 @@
+composer.lock
 /vendor/
 /test/
 /config/
@@ -6,3 +7,4 @@ bootstrap.php
 app.php
 .env
 composer.lock
+/storage

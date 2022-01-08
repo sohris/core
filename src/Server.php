@@ -37,7 +37,6 @@ class Server
     {
         self::$server = $this;
         $this->loop = Loop::get();
-        $this->logger = new Logger();
         $this->events = new EventEmitter;
 
         Loader::loadClasses();
@@ -70,6 +69,7 @@ class Server
 
     public function run()
     {
+        $this->logger = new Logger();
         $this->executeInstallInAllComponents();
         $this->events->emit("components.installed");
 
@@ -106,7 +106,7 @@ class Server
     {
         self::$root_dir = realpath($path);
     }
-    
+
     public static function getServer(): Server
     {
         if (is_null(self::$server)) {
@@ -120,5 +120,4 @@ class Server
     {
         return self::$root_dir;
     }
-
 }

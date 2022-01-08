@@ -16,30 +16,24 @@ class Logger extends MonologLogger
     {
         $this->component_name = $component_name;
         $configs = Utils::getConfigFiles('system');
-
-        $this->log_path = realpath(Server::getRootDir() . "/storage/log");
-        if(array_key_exists('log_folder', $configs))
-        {
-            $this->log_path = realpath($configs['log_folder']);            
+        $this->log_path = Server::getRootDir() . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "log";
+        if (array_key_exists('log_folder', $configs)) {
+            $this->log_path = realpath($configs['log_folder']);
         }
 
         $this->createLogFiles();
         parent::__construct($component_name);
 
         $this->setHandlers([new StreamHandler($this->log_path . "/" . $this->component_name, MonologLogger::DEBUG)]);
-
     }
 
 
     private function createLogFiles()
     {
 
-        if(!is_dir($this->log_path))
-        {
-            mkdir($this->log_path);
-        }
+        Utils::recursiveCreateFolder($this->log_path);
 
-        if(!is_file($this->log_path . "/" . $this->component_name)){
+        if (!is_file($this->log_path . "/" . $this->component_name)) {
             touch($this->log_path . "/" . $this->component_name);
         }
     }

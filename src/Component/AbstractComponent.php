@@ -3,7 +3,7 @@ namespace Sohris\Core\Component;
 
 abstract class AbstractComponent implements IComponent
 {
-    private $name;
+    protected $name = "AbstractComponent";
 
     public $priority = 0;
     
