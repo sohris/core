@@ -2,8 +2,7 @@
 /test/
 /config/
 /log/
-./sohris.json
-sohris.json
+bootstrap.php
 app.php
 .env
 composer.lock

@@ -4,7 +4,7 @@ namespace Sohris\Core;
 
 use Evenement\EventEmitter;
 use React\EventLoop\Loop;
-use Sohris\Core\Components\Logger;
+use Sohris\Core\Component\Component;
 use Sohris\Core\Exceptions\ServerException;
 
 class Server
@@ -12,6 +12,8 @@ class Server
 
     const EVENTS_ENABLED = array("server.beforeStart", "server.start", "server.running", "server.error", "server.stop", "server.pause", "components.loaded", "components.installed", "components.started", "components.register");
     const FILE_SYSTEM_MONITOR = "system_monitor";
+    const COMPONENT_NAME = "Sohris\Core\AbstractComponent";
+
 
     /**
      * @var \React\EventLoop\LoopInterface
@@ -29,13 +31,11 @@ class Server
 
     private static $server;
 
-    private static $root_dir = '';
+    private static $root_dir = './';
 
-    public function __construct(string $root_dir = "./")
+    public function __construct()
     {
         self::$server = $this;
-        self::$root_dir = realpath($root_dir);
-
         $this->loop = Loop::get();
         $this->logger = new Logger();
         $this->events = new EventEmitter;
@@ -47,6 +47,66 @@ class Server
         $this->events->emit("server.beforeStart");
     }
 
+    private function loadComponents()
+    {
+        $classes = Loader::getClassesWithParent(self::COMPONENT_NAME);
+        foreach ($classes as $class) {
+            $this->components[] = new Component($class);
+        }
+        $this->events->emit('components.loaded');
+    }
+
+    private function executeInstallInAllComponents()
+    {
+        try {
+            foreach ($this->components as $component) {
+                $component->install();
+            }
+        } catch (\Throwable $e) {
+            $this->logger->critical($e->getMessage());
+        }
+    }
+
+
+    public function run()
+    {
+        $this->executeInstallInAllComponents();
+        $this->events->emit("components.installed");
+
+        $this->executeStartInAllComponents();
+        $this->events->emit("components.started");
+
+        $this->events->emit("server.running");
+        $this->loop->run();
+    }
+
+    private function executeStartInAllComponents()
+    {
+        try {
+            foreach ($this->components as $component) {
+                $component->start();
+            }
+        } catch (\Throwable $e) {
+            $this->logger->critical($e->getMessage());
+        }
+    }
+    public function on(string $event, callable $func)
+    {
+        if (is_null($func)) {
+            throw new ServerException("Callable can not be NULL!");
+        }
+
+        if (!in_array($event, self::EVENTS_ENABLED)) {
+            throw new ServerException("Event $event is not register!");
+        }
+        $this->events->on($event, $func);
+    }
+
+    public function setRootDir(string $path)
+    {
+        self::$root_dir = realpath($path);
+    }
+    
     public static function getServer(): Server
     {
         if (is_null(self::$server)) {
@@ -56,99 +116,9 @@ class Server
         return self::$server;
     }
 
-
     public static function getRootDir()
     {
         return self::$root_dir;
     }
 
-    private function configSystemMonitor()
-    {
-        $file_path = $this->root_dir . DIRECTORY_SEPARATOR . self::FILE_SYSTEM_MONITOR;
-
-        $this->loop->addPeriodicTimer(
-            5,
-            function () use ($file_path) {
-
-                $file = fopen($file_path, "w+");
-
-                $data = array(
-                    "real_memory" => Utils::bytesToHuman(memory_get_usage(false)),
-                    "total_memory" => Utils::bytesToHuman(memory_get_usage(true)),
-                    "pid" => getmypid(),
-                    "loadavg" => 0,
-                    "last_update" => date('Y-m-d H:i:s')
-                );
-
-                fwrite($file, json_encode($data));
-                fclose($file);
-            }
-        );
-    }
-
-    private function loadComponents()
-    {
-        $classes = Loader::getComponentsClass();
-
-        foreach ($classes as $class) {
-            $this->register_components[] = $class;
-        }
-
-        sort($this->register_components);
-
-        $this->events->emit('components.register');
-
-        foreach ($this->register_components as $key => $component) {
-            $this->components[$key] = new Component($component);
-        }
-        $this->events->emit('components.loaded');
-    }
-
-    private function installComponents()
-    {
-        try {
-
-            foreach ($this->components as $component) {
-                $component->install();
-            }
-        } catch (\Throwable $e) {
-            $this->logger->critical($e->getMessage());
-            echo "[ERROR] " . $e->getMessage() . PHP_EOL;
-        }
-
-        $this->logger->critical(sizeof($this->components) . " components Installed");
-        $this->events->emit("components.installed");
-    }
-
-    private function startComponents()
-    {
-        foreach ($this->components as $component) {
-            $component->start();
-        }
-
-        $this->events->emit("components.started");
-    }
-
-    public function run()
-    {
-
-        $this->installComponents();
-        $this->startComponents();
-        $this->events->emit("server.running");
-        $this->loop->run();
-    }
-
-    public function on(string $event, callable $func)
-    {
-
-        if (is_null($func)) {
-            throw new ServerException("Callable can not be NULL!");
-        }
-
-        if (!in_array($event, self::EVENTS_ENABLED)) {
-            throw new ServerException("Event $event is not register!");
-        }
-
-        $this->events->on($event, $func);
-    }
 }

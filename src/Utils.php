@@ -11,38 +11,6 @@ class Utils
     private static $config_files = array();
 
 
-    public static function loadVendorClasses()
-    {
-        $res = get_declared_classes();
-        $autoloaderClassName = '';
-        foreach ($res as $className) {
-            if (strpos($className, 'ComposerAutoloaderInit') === 0) {
-                $autoloaderClassName = $className; // ComposerAutoloaderInit323a579f2019d15e328dd7fec58d8284 for me
-                break;
-            }
-        }
-        $classLoader = $autoloaderClassName::getLoader();
-        foreach ($classLoader->getClassMap() as $path) {
-            require_once $path;
-        }
-    }
-
-    public static function loadLocalClasses()
-    {
-        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(Server::getRootDir() . DIRECTORY_SEPARATOR . "/src")));
-        $phpFiles = new \RegexIterator($files, '/\.php$/');
-        foreach ($phpFiles as $pf) {
-            include_once $pf->getRealPath();
-        }
-        if (self::checkFileExists(realpath(Server::getRootDir() . DIRECTORY_SEPARATOR . "/vendor/sohris"))) {
-            $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(Server::getRootDir() . DIRECTORY_SEPARATOR . "/vendor/sohris")));
-            $phpFiles = new \RegexIterator($files, '/\.php$/');
-            foreach ($phpFiles as $pf) {
-                include_once $pf->getRealPath();
-            }
-        }
-    }
-
     public static function bytesToHuman($bytes)
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
@@ -114,5 +82,17 @@ class Utils
     {
         list($usec, $sec) = explode(" ", microtime());
         return ((float)$usec + (float)$sec);
+    }
+
+    public static function getPHPFilesInDirectory(string $path)
+    {
+        if(!is_dir($path))
+        {
+            return [];
+        }
+
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path));
+        $phpFiles = new \RegexIterator($files, '/\.php$/');
+        return iterator_to_array($phpFiles);
     }
 }
