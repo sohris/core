@@ -90,6 +90,7 @@ class Server
             $this->logger->critical($e->getMessage());
         }
     }
+
     public function on(string $event, callable $func)
     {
         if (is_null($func)) {
@@ -105,6 +106,15 @@ class Server
     public function setRootDir(string $path)
     {
         self::$root_dir = realpath($path);
+    }
+
+    public function getComponent(string $component_name)
+    {
+        $search = array_filter($this->components, fn($component) => $component->getName() == $component_name );
+        if(empty($search))
+            return false;
+        $component = array_pop($component);
+        return $component->getComponent();
     }
 
     public static function getServer(): Server

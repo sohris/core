@@ -6,8 +6,7 @@ use Exception;
 
 class Utils
 {
-
-    private static $default_configs = null;
+    
     private static $config_files = array();
 
 

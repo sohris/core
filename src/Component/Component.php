@@ -11,6 +11,11 @@ class Component
         $this->component = new $component();
     }
 
+    public function getName()
+    {
+        $this->component->getName();
+    }
+
 
     public function start()
     {
@@ -20,5 +25,10 @@ class Component
     public function install()
     {
         $this->component->install();
+    }
+
+    public function getComponent()
+    {
+        return $this->component;
     }
 }
