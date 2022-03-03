@@ -5,10 +5,11 @@ namespace Sohris\Core;
 class Loader
 {
 
-    public static function loadClasses()
+    public static function loadClasses(bool $vendor = false)
     {
         self::requireLocalClasses();
-        self::requireVendorClasses();
+        if($vendor)
+            self::requireVendorClasses();
     }
 
     private static function requireVendorClasses()
