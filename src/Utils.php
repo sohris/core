@@ -111,4 +111,85 @@ class Utils
 
         return;
     }
+    
+    public static function jsonEncodeUTF8($content)
+    {
+        $c = Utils::UTF8EncodeRec($content);
+        $x = json_encode($c);
+        return $x;
+    }
+
+    public static function jsonDecodeUTF8($content)
+    {
+        $x = json_decode($content);
+        $c = Utils::UTF8DecodeRec($x);
+        return $c;
+    }
+
+    
+
+    public static function UTF8EncodeRec($value)
+    {
+        if ($value == "" || $value == null || (!$value && $value !== "0")) {
+            return " ";
+        }
+
+        $newarray = array();
+
+        if (is_array($value)) {
+            foreach ($value as $key => $data) {
+                $newarray[Utils::UTF8Validate($key)] = Utils::UTF8EncodeRec($data);
+            }
+        } else {
+            return Utils::UTF8Validate($value);
+        }
+
+        return $newarray;
+    }
+
+    public static function UTF8DecodeRec($value)
+    {
+
+        if ($value == "" || $value == null || !$value) {
+            return " ";
+        }
+
+        $newarray = array();
+
+        if (is_array($value) || gettype($value) == "object") {
+            foreach ($value as $key => $data) {
+                $newarray[Utils::UTF8Validate($key, true)] = Utils::UTF8DecodeRec($data);
+            }
+        } else {
+            return Utils::UTF8Validate($value, true);
+        }
+
+        return $newarray;
+    }
+
+    public static function UTF8Validate($string, $reverse = 0)
+    {
+        if ($reverse == 0) {
+
+            if (preg_match('!!u', $string)) {
+                return $string;
+            } else {
+                return utf8_encode($string);
+            }
+
+        }
+
+        // Decoding
+        if ($reverse == 1) {
+
+            if (preg_match('!!u', $string)) {
+                return utf8_decode($string);
+            } else {
+                return $string;
+            }
+
+        }
+
+        return false;
+    }
 }
