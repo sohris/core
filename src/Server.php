@@ -39,10 +39,6 @@ class Server
         $this->loop = Loop::get();
         $this->events = new EventEmitter;
 
-        Loader::loadClasses();
-
-        $this->loadComponents();
-
         $this->events->emit("server.beforeStart");
     }
 
@@ -89,6 +85,12 @@ class Server
         } catch (\Throwable $e) {
             $this->logger->critical($e->getMessage());
         }
+    }
+    public function loadingServer()
+    {
+        Loader::loadClasses();
+
+        $this->loadComponents();
     }
 
     public function on(string $event, callable $func)
