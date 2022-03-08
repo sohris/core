@@ -94,20 +94,38 @@ class Utils
         return iterator_to_array($phpFiles);
     }
 
-    public static function recursiveCreateFolder($path)
+    public static function recursiveCreateFolder2($path)
     {
         if (is_dir($path)) {
             return;
         }
-
         $next_recurcion = substr($path, 0 ,strripos($path, DIRECTORY_SEPARATOR));
-
-        if (!$next_recurcion)
+        var_dump($next_recurcion);
+        if (!$next_recurcion){
+            mkdir($path);
             return;
-
+        }
         self::recursiveCreateFolder($next_recurcion);
 
-        mkdir($path);
+        return;
+    }
+
+    public static function recursiveCreateFolder($path)
+    {
+        $paths = explode("/", $path);
+        if(empty($paths))
+            return;
+        if(sizeof($paths) > 1)
+        {
+            array_pop($paths);
+            $new_path = implode(DIRECTORY_SEPARATOR, $paths);
+            self::recursiveCreateFolder($new_path);
+        }
+
+        if(!is_dir($path))
+        {
+            mkdir($path);
+        }
 
         return;
     }
