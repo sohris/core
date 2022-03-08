@@ -13,6 +13,7 @@ class Logger extends MonologLogger
     private $log_path = './';
     private $component_name = "";
     private $stream;
+    private $readable_stream;
 
     public function __construct(string $component_name = 'Core')
     {
@@ -24,10 +25,19 @@ class Logger extends MonologLogger
             $this->log_path = realpath($configs['log_folder']);
         }
 
+        $this->stream = fopen($this->log_path . "/" . $this->component_name, 'rw');
         $this->createLogFiles();
+
         parent::__construct($component_name);
 
-        $this->setHandlers([new StreamHandler($this->log_path . "/" . $this->component_name, MonologLogger::DEBUG)]);
+        $this->setHandlers([new StreamHandler($this->stream, MonologLogger::DEBUG)]);
+
+        $this->createEvents();
+    }
+
+    private function createEvents()
+    {
+        $this->createLogStream();
     }
 
 
@@ -50,10 +60,15 @@ class Logger extends MonologLogger
 
     private function createLogStream()
     {
-        $stream = new ReadableResourceStream(fopen($this->log_path . "/" . $this->component_name, 'r'));
+        $stream = new ReadableResourceStream($this->stream);
         if($stream->isReadable())
         {
-            $this->stream = $stream;
+            $this->readable_stream = $stream;
         }
+    }
+
+    public function on(string $event, callable $call)
+    {
+        $this->readable_stream->on($event, $call);
     }
 }
