@@ -38,12 +38,10 @@ class Logger extends MonologLogger
         parent::__construct($component_name);
 
         $formatter = new LineFormatter(self::LOG_FORMAT,self::DATE_FORMAT);
-        $stream = new StreamHandler(fopen($file, 'rw'), MonologLogger::DEBUG);
+        $stream = new StreamHandler($file, MonologLogger::DEBUG);
         $stream->setFormatter($formatter);
         
         $this->setHandlers([$stream]);
-
-        $this->stream = $stream->getStream();
     }
 
     private function createLogFiles()
@@ -51,10 +49,5 @@ class Logger extends MonologLogger
         if (!is_file($this->log_path . "/" . $this->component_name)) {
             touch($this->log_path . "/" . $this->component_name);
         }
-    }
-
-    public function getStreamFile()
-    {
-        return $this->stream;
     }
 }
