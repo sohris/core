@@ -2,6 +2,7 @@
 
 namespace Sohris\Core;
 
+use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger as MonologLogger;
 use React\Stream\ReadableResourceStream;
@@ -10,10 +11,16 @@ use Sohris\Core\Utils;
 
 class Logger extends MonologLogger
 {
+    const DATE_FORMAT = "Y-m-d H:i:sP";
+    const LOG_FORMAT = "[%datetime%][%level_name%] %message% %context%\n";
+
+
     private $log_path = './';
     private $component_name = "";
     private $stream;
     private $readable_stream;
+
+
 
     public function __construct(string $component_name = 'Core')
     {
@@ -25,21 +32,19 @@ class Logger extends MonologLogger
             $this->log_path = realpath($configs['log_folder']);
         }
 
-        $this->stream = fopen($this->log_path . "/" . $this->component_name, 'rw');
+        $file = $this->log_path . "/" . $this->component_name;
         $this->createLogFiles();
 
         parent::__construct($component_name);
 
-        $this->setHandlers([new StreamHandler($this->stream, MonologLogger::DEBUG)]);
+        $formatter = new LineFormatter(self::LOG_FORMAT,self::DATE_FORMAT);
+        $stream = new StreamHandler(fopen($file, 'rw'), MonologLogger::DEBUG);
+        $stream->setFormatter($formatter);
+        
+        $this->setHandlers([$stream]);
 
-        $this->createEvents();
+        $this->stream = $stream->getStream();
     }
-
-    private function createEvents()
-    {
-        $this->createLogStream();
-    }
-
 
     private function createLogFiles()
     {
@@ -48,27 +53,8 @@ class Logger extends MonologLogger
         }
     }
 
-    public function getLogFileStream()
+    public function getStreamFile()
     {
-        if(!$this->stream)
-        {
-            $this->createLogStream();
-        }
-
         return $this->stream;
-    }
-
-    private function createLogStream()
-    {
-        $stream = new ReadableResourceStream($this->stream);
-        if($stream->isReadable())
-        {
-            $this->readable_stream = $stream;
-        }
-    }
-
-    public function on(string $event, callable $call)
-    {
-        $this->readable_stream->on($event, $call);
     }
 }
