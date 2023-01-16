@@ -122,7 +122,7 @@ class Utils
             self::recursiveCreateFolder($new_path);
         }
 
-        if(!is_dir($path))
+        if(!empty($path)&&!is_dir($path))
         {
             mkdir($path);
         }
