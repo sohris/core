@@ -1,7 +1,7 @@
 {
     "name": "sohris/core",
     "license": "MIT",
-    "version": "0.2.10",
+    "version": "0.2.11",
     "authors": [
         {
             "name": "Rodrigo Danieli",
@@ -9,14 +9,16 @@
         }
     ],
     "require": {
-        "react/event-loop": "1.2.0",
-        "react/stream": "1.2.0",
-        "evenement/evenement": "3.0.0",
-        "monolog/monolog": "2.3.5"
+        "react/event-loop": "^1.2.0",
+        "react/stream": "^1.2.0",
+        "evenement/evenement": "^3.0.0",
+        "monolog/monolog": "^2.3.5",
+        "react/promise": "^2.9"
     },
     "autoload": {
       "psr-4": {
-        "Sohris\\Core\\": "src/"
+        "Sohris\\Core\\": "src/",
+        "Test\\": "tests/"
       }
     }
 }
