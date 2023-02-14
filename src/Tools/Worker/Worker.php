@@ -75,8 +75,8 @@ class Worker
 
     public function restart()
     {
-        if ($this->stage != 'running') return;
-        ChannelController::send($this->channel_name . "_controller", 'kill');
+        if ($this->stage == 'running')
+            ChannelController::send($this->channel_name . "_controller", 'kill');
         $this->stage = 'restarted';
         $this->run();
     }
@@ -96,6 +96,26 @@ class Worker
                 set_error_handler(function (...$err) use ($channel_name) {
                     ChannelController::send($channel_name, 'error', ['errmsg' => $err[2], 'errcode' => $err[1], 'trace' => $err[3]]);
                 });
+                
+                $createTimers = function () use ($tasks, $channel_name) {
+                    foreach ($tasks as $calls)
+                        self::$timers[] = self::$loop->addPeriodicTimer(
+                            $calls['timer'],
+                            fn () => $calls['callable'](
+                                fn ($event_name, mixed $args) => ChannelController::send($channel_name, $event_name, $args)
+                            )
+                        );
+                };
+                ChannelController::on($channel_name . "_controller", 'stop', function () {
+                    array_walk(self::$timers, fn ($timer) => self::$loop->cancelTimer($timer));
+                    self::$timers = [];
+                });
+                ChannelController::on($channel_name . "_controller", 'start', function () use ($createTimers) {
+                    $createTimers();
+                });
+                ChannelController::on($channel_name . "_controller", 'kill', function () {
+                    exit;
+                });
                 if (!self::$first) {
                     self::$first = true;
                     self::$loop = Loop::get();
@@ -103,28 +123,9 @@ class Worker
                         array_walk($on_first, fn ($el) => $el(fn ($event_name, mixed $args) => ChannelController::send($channel_name, $event_name, $args)));
                 }
                 if (!empty($tasks)) {
-                    $createTimers = function () use ($tasks, $channel_name) {
-                        foreach ($tasks as $calls)
-                            self::$timers[] = self::$loop->addPeriodicTimer(
-                                $calls['timer'],
-                                fn () => $calls['callable'](
-                                    fn ($event_name, mixed $args) => ChannelController::send($channel_name, $event_name, $args)
-                                )
-                            );
-                    };
-                    ChannelController::on($channel_name . "_controller", 'stop', function () {
-                        array_walk(self::$timers, fn ($timer) => self::$loop->cancelTimer($timer));
-                        self::$timers = [];
-                    });
-                    ChannelController::on($channel_name . "_controller", 'start', function () use ($createTimers) {
-                        $createTimers();
-                    });
-                    ChannelController::on($channel_name . "_controller", 'kill', function () {
-                        exit;
-                    });
                     $createTimers();
-                    self::$loop->run();
                 }
+                self::$loop->run();
             } catch (Exception $e) {
                 ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'trace' => $e->getTrace()]);
             }
@@ -137,6 +138,8 @@ class Worker
         if ($this->stage != 'running' && $this->stage != 'stopped') return;
         $this->stage = 'unloaded';
         ChannelController::send($this->channel_name . "_controller", 'kill');
+        $this->runtime->close();
+        unset($this->runtime);
     }
 
     public function getStage()
