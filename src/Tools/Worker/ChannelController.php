@@ -72,8 +72,6 @@ final class ChannelController
         ) return;
 
         foreach (self::$listeners[$channel_name][$event_name] as $event) {
-            if (is_array($args))
-                $event(...$args);
             $event($args);
         }
     }
