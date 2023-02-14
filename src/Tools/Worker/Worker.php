@@ -75,7 +75,7 @@ class Worker
 
     public function restart()
     {
-        echo "Restart" . PHP_EOL;
+        if ($this->stage != 'running') return;
         ChannelController::send($this->channel_name . "_controller", 'kill');
         $this->stage = 'restarted';
         $this->run();
@@ -132,6 +132,13 @@ class Worker
         $this->stage = 'running';
     }
 
+    public function kill()
+    {
+        if ($this->stage != 'running' && $this->stage != 'stopped') return;
+        $this->stage = 'unloaded';
+        ChannelController::send($this->channel_name . "_controller", 'kill');
+    }
+
     public function getStage()
     {
         return $this->stage;
@@ -146,5 +153,10 @@ class Worker
             'code' => $this->err_code,
             'trace' => $this->err_trace
         ];
+    }
+
+    public function getChannelName()
+    {
+        return $this->channel_name;
     }
 }
