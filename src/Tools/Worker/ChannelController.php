@@ -78,7 +78,7 @@ final class ChannelController
         }
     }
 
-    public static function send(string $channel_name, string $event_name, mixed $args = null)
+    public static function send(string $channel_name, string $event_name, $args = null)
     {
         try {
             $channel = Channel::make($channel_name, Channel::Infinite);
@@ -101,4 +101,5 @@ final class ChannelController
         }
         self::$listeners[$channel_name][$event_name][] = $callback;
     }
+
 }
