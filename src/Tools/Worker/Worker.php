@@ -111,16 +111,17 @@ class Worker
                     ChannelController::send($channel_name, 'error', ['errmsg' => $err[2], 'errcode' => $err[1], 'trace' => $err[3]]);
                 });
 
-                $createTimers = function () use ($tasks,$tasks_crontab, $channel_name) {
-                    foreach ($tasks as $calls)
+                $createTimers = function () use ($tasks, $tasks_crontab, $channel_name) {
+                    foreach ($tasks as $calls) {
+                        if (!array_key_exists('timer', $calls)) continue;
                         self::$timers[] = self::$loop->addPeriodicTimer(
                             $calls['timer'],
                             fn () => $calls['callable'](
                                 fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
                             )
                         );
-                    foreach ($tasks_crontab as $key => $cron_calls)
-                    {
+                    }
+                    foreach ($tasks_crontab as $key => $cron_calls) {
                         self::reconfigureCronTimer($key, $cron_calls, $channel_name);
                     }
                 };
