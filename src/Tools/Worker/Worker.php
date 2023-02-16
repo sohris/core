@@ -65,12 +65,13 @@ class Worker
     {
         $this->callbacks[] = [
             "timer" => $timer,
-            "callable" =>  $callback
+            "callable" => $callback
         ];
     }
     public function callCronFunction(callable $callback, string $crontab)
     {
-        $this->callbacks[] = [
+
+        $this->callbacks_crontab[] = [
             "crontab" => $crontab,
             "callable" =>  $callback
         ];
@@ -179,8 +180,8 @@ class Worker
 
         $diff = $to_run->getTimestamp() - $now->getTimestamp();
         self::$cron_timers[$key] = self::$loop->addTimer($diff, function () use ($key, $task, $channel_name) {
-            $task['callback'](
-                fn ($event_name, mixed $args) => ChannelController::send($channel_name, $event_name, $args)
+            \call_user_func($task['callable'],
+                fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
             );
             self::reconfigureCronTimer($key, $task, $channel_name);
         });
