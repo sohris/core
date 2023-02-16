@@ -11,6 +11,7 @@ use parallel\Runtime;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
+use Sohris\Core\Loader;
 use Sohris\Core\Server;
 
 class Worker
@@ -111,7 +112,8 @@ class Worker
                 set_error_handler(function (...$err) use ($channel_name) {
                     ChannelController::send($channel_name, 'error', ['errmsg' => $err[2], 'errcode' => $err[1], 'trace' => $err[3]]);
                 });
-
+                
+                Loader::loadClasses();
                 $createTimers = function () use ($tasks, $tasks_crontab, $channel_name) {
                     foreach ($tasks as $calls) {
                         if (!array_key_exists('timer', $calls)) continue;
