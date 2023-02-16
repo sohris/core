@@ -43,7 +43,6 @@ class Server
         $this->start = time();
         $this->events->emit("server.beforeStart");
 
-        Loader::loadClasses();
     }
 
     private function loadComponents()
@@ -70,6 +69,7 @@ class Server
     public function run()
     {
         
+        Loader::loadClasses();
         $this->loadComponents();
         $this->logger = new Logger();
         $this->executeInstallInAllComponents();
