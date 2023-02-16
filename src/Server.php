@@ -12,7 +12,7 @@ class Server
 
     const EVENTS_ENABLED = array("server.beforeStart", "server.start", "server.running", "server.error", "server.stop", "server.pause", "components.loaded", "components.installed", "components.started", "components.register");
     const FILE_SYSTEM_MONITOR = "system_monitor";
-    const COMPONENT_NAME = "Sohris\Core\Component\AbstractComponent";
+    const COMPONENT_NAME = "Sohris\Core\ComponentControl";
 
 
     /**
@@ -24,6 +24,8 @@ class Server
      * @var \Evenement\EventEmitter
      */
     private $events;
+
+    private $start = 0;
 
     private $components = array();
 
@@ -38,15 +40,17 @@ class Server
         self::$server = $this;
         $this->loop = Loop::get();
         $this->events = new EventEmitter;
-
+        $this->start = time();
         $this->events->emit("server.beforeStart");
+
+        Loader::loadClasses();
     }
 
     private function loadComponents()
     {
         $classes = Loader::getClassesWithParent(self::COMPONENT_NAME);
-        foreach ($classes as $class) {
-            $this->components[] = new Component($class);
+        foreach ($classes as $class) {            
+            $this->components[sha1($class)] = new $class;
         }
         $this->events->emit('components.loaded');
     }
@@ -65,6 +69,8 @@ class Server
 
     public function run()
     {
+        
+        $this->loadComponents();
         $this->logger = new Logger();
         $this->executeInstallInAllComponents();
         $this->events->emit("components.installed");
@@ -86,12 +92,6 @@ class Server
             $this->logger->critical($e->getMessage());
         }
     }
-    public function loadingServer()
-    {
-        Loader::loadClasses();
-
-        $this->loadComponents();
-    }
 
     public function on(string $event, callable $func)
     {
@@ -110,13 +110,11 @@ class Server
         self::$root_dir = realpath($path);
     }
 
-    public function getComponent(string $component_name)
-    {
-        $search = array_filter($this->components, fn($component) => $component->getName() == $component_name );
-        if(empty($search))
-            return false;
-        $component = array_pop($component);
-        return $component->getComponent();
+    public function getComponent(string $component_name) : ComponentControl
+    {   
+        $key = sha1($component_name);
+        if(!array_key_exists($key, $this->components)) return null;
+        return $this->components[$key];
     }
 
     public static function getServer(): Server
@@ -131,5 +129,10 @@ class Server
     public static function getRootDir()
     {
         return self::$root_dir;
+    }
+    
+    public function getUptime()
+    {
+        return time() - $this->start;
     }
 }
