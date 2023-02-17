@@ -42,13 +42,12 @@ class Server
         $this->events = new EventEmitter;
         $this->start = time();
         $this->events->emit("server.beforeStart");
-
     }
 
     private function loadComponents()
     {
         $classes = Loader::getClassesWithParent(self::COMPONENT_NAME);
-        foreach ($classes as $class) {            
+        foreach ($classes as $class) {
             $this->components[sha1($class)] = new $class;
         }
         $this->events->emit('components.loaded');
@@ -68,9 +67,7 @@ class Server
 
     public function run()
     {
-        
-        Loader::loadClasses();
-        $this->loadComponents();
+        $this->loadServer();
         $this->logger = new Logger();
         $this->executeInstallInAllComponents();
         $this->events->emit("components.installed");
@@ -80,6 +77,12 @@ class Server
 
         $this->events->emit("server.running");
         $this->loop->run();
+    }
+
+    public function loadServer()
+    {
+        Loader::loadClasses();
+        $this->loadComponents();
     }
 
     private function executeStartInAllComponents()
@@ -110,10 +113,10 @@ class Server
         self::$root_dir = realpath($path);
     }
 
-    public function getComponent(string $component_name) : ComponentControl
-    {   
+    public function getComponent(string $component_name): ComponentControl
+    {
         $key = sha1($component_name);
-        if(!array_key_exists($key, $this->components)) return null;
+        if (!array_key_exists($key, $this->components)) return null;
         return $this->components[$key];
     }
 
@@ -130,7 +133,7 @@ class Server
     {
         return self::$root_dir;
     }
-    
+
     public function getUptime()
     {
         return time() - $this->start;

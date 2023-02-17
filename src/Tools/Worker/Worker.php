@@ -112,8 +112,8 @@ class Worker
                 set_error_handler(function (...$err) use ($channel_name) {
                     ChannelController::send($channel_name, 'error', ['errmsg' => $err[2], 'errcode' => $err[1], 'trace' => $err[3]]);
                 });
-                
-                Loader::loadClasses();
+                $server = Server::getServer();
+                $server->loadServer();
                 $createTimers = function () use ($tasks, $tasks_crontab, $channel_name) {
                     foreach ($tasks as $calls) {
                         if (!array_key_exists('timer', $calls)) continue;
