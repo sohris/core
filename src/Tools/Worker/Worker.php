@@ -195,7 +195,7 @@ class Worker
             'timestamp' => $this->err_time,
             'message' => $this->err_msg,
             'code' => $this->err_code,
-            'trace' => array_slice($this->err_trace, 0, 3)
+            'trace' => is_array($this->err_trace)? array_slice($this->err_trace, 0, 3): $this->err_trace
         ];
     }
 
