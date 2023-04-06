@@ -5,13 +5,10 @@ namespace Sohris\Core\Tools\Worker;
 use Cron\CronExpression;
 use DateTime;
 use Exception;
-use parallel\Channel;
-use parallel\Events;
 use parallel\Runtime;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
-use Sohris\Core\Loader;
 use Sohris\Core\Server;
 
 class Worker
@@ -22,6 +19,7 @@ class Worker
     private $callbacks = [];
     private $callbacks_on_first = [];
     private $callbacks_crontab = [];
+    private $callbacks_timeout = [];
     private static $first = false;
     private $stage = 'unloaded';
     private $err_code = 0;
@@ -69,11 +67,21 @@ class Worker
             "callable" => $callback
         ];
     }
+
     public function callCronFunction(callable $callback, string $crontab)
     {
 
         $this->callbacks_crontab[] = [
             "crontab" => $crontab,
+            "callable" =>  $callback
+        ];
+    }
+
+    public function callTimeoutFunction(callable $callback, string $timeout)
+    {
+
+        $this->callbacks_timeout[] = [
+            "timeout" => $timeout,
             "callable" =>  $callback
         ];
     }
@@ -107,18 +115,27 @@ class Worker
         $channel_name = $this->channel_name;
         $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
         $this->runtime = new Runtime($bootstrap);
-        $this->runtime->run(function ($on_first, $tasks, $tasks_crontab) use ($channel_name) {
+        $this->runtime->run(function ($on_first, $tasks, $tasks_crontab, $tasks_timeout) use ($channel_name) {
             try {
                 set_error_handler(function (...$err) use ($channel_name) {
                     ChannelController::send($channel_name, 'error', ['errmsg' => $err[2], 'errcode' => $err[1], 'trace' => $err[3]]);
                 });
                 $server = Server::getServer();
                 $server->loadServer();
-                $createTimers = function () use ($tasks, $tasks_crontab, $channel_name) {
+                $createTimers = function () use ($tasks, $tasks_crontab, $tasks_timeout, $channel_name) {
                     foreach ($tasks as $calls) {
                         if (!array_key_exists('timer', $calls)) continue;
                         self::$timers[] = self::$loop->addPeriodicTimer(
                             $calls['timer'],
+                            fn () => $calls['callable'](
+                                fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
+                            )
+                        );
+                    }
+                    foreach ($tasks_timeout as $calls) {
+                        if (!array_key_exists('timeout', $calls)) continue;
+                        self::$timers[] = self::$loop->addTimer(
+                            $calls['timeout'],
                             fn () => $calls['callable'](
                                 fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
                             )
@@ -150,7 +167,7 @@ class Worker
             } catch (Exception $e) {
                 ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'trace' => $e->getTrace()]);
             }
-        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab]);
+        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout]);
         $this->stage = 'running';
     }
 
@@ -182,7 +199,8 @@ class Worker
 
         $diff = $to_run->getTimestamp() - $now->getTimestamp();
         self::$cron_timers[$key] = self::$loop->addTimer($diff, function () use ($key, $task, $channel_name) {
-            \call_user_func($task['callable'],
+            \call_user_func(
+                $task['callable'],
                 fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
             );
             self::reconfigureCronTimer($key, $task, $channel_name);
@@ -195,12 +213,30 @@ class Worker
             'timestamp' => $this->err_time,
             'message' => $this->err_msg,
             'code' => $this->err_code,
-            'trace' => is_array($this->err_trace)? array_slice($this->err_trace, 0, 3): $this->err_trace
+            'trace' => is_array($this->err_trace) ? array_slice($this->err_trace, 0, 3) : $this->err_trace
         ];
     }
 
     public function getChannelName()
     {
         return $this->channel_name;
+    }
+
+    public function clearTimeoutCallFunction()
+    {
+        $this->callbacks_timeout = [];
+    }
+
+    public function clearCallFunction()
+    {
+        $this->callbacks = [];
+    }
+    public function clearCallCronFunction()
+    {
+        $this->callbacks_crontab = [];
+    }
+    public function clearCallOnFirstFunction()
+    {
+        $this->callbacks_on_first = [];
     }
 }
