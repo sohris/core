@@ -10,6 +10,7 @@ use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 use Sohris\Core\Server;
+use Throwable;
 
 class Worker
 {
@@ -20,14 +21,19 @@ class Worker
     private $callbacks_on_first = [];
     private $callbacks_crontab = [];
     private $callbacks_timeout = [];
+    private $task;
+    private $stay_alive = false;
     private static $first = false;
     private $stage = 'unloaded';
     private $err_code = 0;
     private $err_time = 0;
     private $err_msg = '';
+    private $err_file = '';
+    private $err_line = '';
     private $err_trace = [];
     private static $timers = [];
     private static $cron_timers = [];
+    private $last_interaction = 0;
 
     /**
      * @var LoopInterface
@@ -46,6 +52,23 @@ class Worker
             $this->err_code = $err_info['errcode'];
             $this->err_msg = $err_info['errmsg'];
             $this->err_trace = $err_info['trace'];
+        });
+        Loop::addPeriodicTimer(5, function () {
+            if (!$this->task) return;
+            if ($this->task->done() && $this->stay_alive) {
+                try {
+                    $this->task->value();
+                } catch (Throwable $e) { 
+                    $this->err_time = time();
+                    $this->err_code = $e->getCode(); 
+                    $this->err_file = $e->getFile();
+                    $this->err_line = $e->getLine();
+                    $this->err_msg = $e->getMessage();
+                    $this->err_trace = array_map(fn($e) => ["file" => $e['file'], "line" => $e['line']],array_slice($e->getTrace(), 0,10));           
+                }
+                $this->stage = "death";
+                $this->restart();
+            }
         });
     }
 
@@ -85,6 +108,10 @@ class Worker
             "callable" =>  $callback
         ];
     }
+    public function stayAlive()
+    {
+        $this->stay_alive = true;
+    }
 
     public function on(string $event_name, callable $callback)
     {
@@ -115,11 +142,8 @@ class Worker
         $channel_name = $this->channel_name;
         $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
         $this->runtime = new Runtime($bootstrap);
-        $this->runtime->run(function ($on_first, $tasks, $tasks_crontab, $tasks_timeout) use ($channel_name) {
+        $this->task = $this->runtime->run(function ($on_first, $tasks, $tasks_crontab, $tasks_timeout) use ($channel_name) {
             try {
-                set_error_handler(function (...$err) use ($channel_name) {
-                    ChannelController::send($channel_name, 'error', ['errmsg' => $err[2], 'errcode' => $err[1], 'trace' => $err[3]]);
-                });
                 $server = Server::getServer();
                 $server->loadServer();
                 $createTimers = function () use ($tasks, $tasks_crontab, $tasks_timeout, $channel_name) {
@@ -213,6 +237,8 @@ class Worker
             'timestamp' => $this->err_time,
             'message' => $this->err_msg,
             'code' => $this->err_code,
+            'line' => $this->err_line,
+            'file' => $this->err_file,
             'trace' => is_array($this->err_trace) ? array_slice($this->err_trace, 0, 3) : $this->err_trace
         ];
     }
@@ -231,10 +257,12 @@ class Worker
     {
         $this->callbacks = [];
     }
+
     public function clearCallCronFunction()
     {
         $this->callbacks_crontab = [];
     }
+
     public function clearCallOnFirstFunction()
     {
         $this->callbacks_on_first = [];
