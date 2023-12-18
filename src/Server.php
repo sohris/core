@@ -3,6 +3,7 @@
 namespace Sohris\Core;
 
 use Evenement\EventEmitter;
+use Exception;
 use React\EventLoop\Loop;
 use Sohris\Core\Component\Component;
 use Sohris\Core\Exceptions\ServerException;
@@ -116,7 +117,8 @@ class Server
     public function getComponent(string $component_name): ComponentControl
     {
         $key = sha1($component_name);
-        if (!array_key_exists($key, $this->components)) return null;
+        if (!array_key_exists($key, $this->components))
+            throw new Exception("Component not register $component_name");
         return $this->components[$key];
     }
 
