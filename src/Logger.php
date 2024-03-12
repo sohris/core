@@ -37,10 +37,40 @@ class Logger extends MonologLogger
 
         parent::__construct($component_name);
 
-        $formatter = new LineFormatter(self::LOG_FORMAT,self::DATE_FORMAT);
-        $stream = new StreamHandler($file, MonologLogger::DEBUG);
+        $formatter = new LineFormatter(self::LOG_FORMAT, self::DATE_FORMAT);
+        $level = MonologLogger::ALERT;
+
+        if (isset($configs['log_level'])) {
+            switch ($configs['log_level']) {
+                case 'debug':
+                    $level = MonologLogger::DEBUG;
+                    break;
+                case 'info':
+                    $level = MonologLogger::INFO;
+                    break;
+                case 'notice':
+                    $level = MonologLogger::NOTICE;
+                    break;
+                case 'warning':
+                    $level = MonologLogger::WARNING;
+                    break;
+                case 'error':
+                    $level = MonologLogger::ERROR;
+                    break;
+                case 'critical':
+                    $level = MonologLogger::CRITICAL;
+                    break;
+                case 'alert':
+                    $level = MonologLogger::ALERT;
+                    break;
+                case 'emergency':
+                    $level = MonologLogger::EMERGENCY;
+                    break;
+            }
+        }
+
+        $stream = new StreamHandler($file, $level);
         $stream->setFormatter($formatter);
-        
         $this->setHandlers([$stream]);
     }
 
