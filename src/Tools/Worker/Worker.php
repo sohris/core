@@ -195,7 +195,9 @@ class Worker
                 $createTimers();
                 self::$loop->run();
             } catch (Exception $e) {
-                ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'trace' => $e->getTrace()]);
+                ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
+            } catch (Throwable $e) {
+                ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
             }
         }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout]);
         $this->stage = 'running';
