@@ -56,20 +56,20 @@ class Worker
         Loop::addPeriodicTimer(5, function () {
             if (!$this->task) return;
             if ($this->task->done() && $this->stay_alive) {
-              
+
                 try {
                     $this->task->value();
-                } catch (Throwable $e) { 
+                } catch (Throwable $e) {
                     $this->err_time = time();
-                    $this->err_code = $e->getCode(); 
+                    $this->err_code = $e->getCode();
                     $this->err_file = $e->getFile();
                     $this->err_line = $e->getLine();
                     $this->err_msg = $e->getMessage();
-                    $this->err_trace = array_map(fn($e) => ["file" => $e['file'], "line" => $e['line']],array_slice($e->getTrace(), 0,5));                    
+                    $this->err_trace = array_map(fn ($e) => ["file" => $e['file'], "line" => $e['line']], array_slice($e->getTrace(), 0, 5));
                 }
                 $error = $this->getLastError();
                 unset($error['trace']);
-                ChannelController::send($this->channel_name, 'restart',$error);
+                ChannelController::send($this->channel_name, 'restart', $error);
 
                 $this->stage = "death";
                 $this->restart();
@@ -79,7 +79,8 @@ class Worker
 
     public function __destruct()
     {
-        $this->runtime->kill();
+        if ($this->runtime)
+            $this->runtime->kill();
         $this->stage = 'unloaded';
     }
 
