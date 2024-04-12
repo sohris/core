@@ -1,0 +1,21 @@
+#!/usr/local/bin/php
+<?php
+// application.php
+
+require 'vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+
+$application = new Application();
+
+$commands = [
+    'Sohris\Core\Commands\Run'
+];
+
+foreach ($commands as $command) {
+    $application->add(new $command);
+}
+
+
+
+$application->run();

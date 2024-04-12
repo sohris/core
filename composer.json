@@ -1,7 +1,7 @@
 {
     "name": "sohris/core",
     "license": "MIT",
-    "version": "0.3.13",
+    "version": "0.4.0",
     "authors": [
         {
             "name": "Rodrigo Danieli",
@@ -14,8 +14,13 @@
         "evenement/evenement": "^3.0.0",
         "monolog/monolog": "^2.3.5",
         "react/promise": "^2.9",
-        "mtdowling/cron-expression": "^1.2"
+        "mtdowling/cron-expression": "^1.2",
+        "symfony/console": "^5.4",
+        "symfony/symfony": "^5.4"
     },
+    "bin": [
+      "bin/sohris"
+    ],
     "autoload": {
       "psr-4": {
         "Sohris\\Core\\": "src/",

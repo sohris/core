@@ -7,6 +7,7 @@ use Exception;
 use React\EventLoop\Loop;
 use Sohris\Core\Component\Component;
 use Sohris\Core\Exceptions\ServerException;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class Server
 {
@@ -36,9 +37,13 @@ class Server
 
     private static $root_dir = './';
 
-    public function __construct()
+    private static OutputInterface $output;
+
+    public function __construct(OutputInterface $output = null)
     {
         self::$server = $this;
+        if ($output)
+            self::$output = $output;
         $this->loop = Loop::get();
         $this->events = new EventEmitter;
         $this->start = time();
@@ -139,5 +144,10 @@ class Server
     public function getUptime()
     {
         return time() - $this->start;
+    }
+
+    public static function getOutput()
+    {
+        return self::$output;
     }
 }

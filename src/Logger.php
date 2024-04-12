@@ -8,6 +8,7 @@ use Monolog\Logger as MonologLogger;
 use React\Stream\ReadableResourceStream;
 use Sohris\Core\Exceptions\ServerException;
 use Sohris\Core\Utils;
+use Symfony\Bridge\Monolog\Handler\ConsoleHandler;
 
 class Logger extends MonologLogger
 {
@@ -71,7 +72,7 @@ class Logger extends MonologLogger
 
         $stream = new StreamHandler($file, $level);
         $stream->setFormatter($formatter);
-        $this->setHandlers([$stream]);
+        $this->setHandlers([$stream, new ConsoleHandler(Server::getOutput())]);
     }
 
     private function createLogFiles()
