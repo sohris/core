@@ -45,8 +45,7 @@ class Server
     public function __construct(OutputInterface $output = null)
     {
         self::$server = $this;
-        if ($output)
-            self::$output = $output;
+        self::$output = $output;
         $this->loop = Loop::get();
         $this->events = new EventEmitter;
         $this->start = time();
@@ -151,7 +150,7 @@ class Server
 
     public static function getOutput()
     {
-        if(!self::$output)
+        if(isset(self::$output))
             return new ConsoleOutput(self::$verbose);
         return self::$output;
     }
