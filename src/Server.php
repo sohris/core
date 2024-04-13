@@ -7,6 +7,7 @@ use Exception;
 use React\EventLoop\Loop;
 use Sohris\Core\Component\Component;
 use Sohris\Core\Exceptions\ServerException;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Server
@@ -38,6 +39,8 @@ class Server
     private static $root_dir = './';
 
     private static OutputInterface $output;
+
+    private static $verbose = ConsoleOutput::VERBOSITY_NORMAL;
 
     public function __construct(OutputInterface $output = null)
     {
@@ -148,6 +151,9 @@ class Server
 
     public static function getOutput()
     {
+        if(!self::$output)
+            return new ConsoleOutput(self::$verbose);
         return self::$output;
     }
+
 }
