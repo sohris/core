@@ -10,6 +10,7 @@ use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 use Sohris\Core\Server;
+use Sohris\Core\Utils;
 use Throwable;
 
 class Worker
@@ -146,7 +147,12 @@ class Worker
             return;
         }
         $channel_name = $this->channel_name;
-        $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
+        $configs = Utils::getConfigFiles("system");
+
+        if (isset($configs['bootstrap_file']))
+            $bootstrap = $configs['bootstrap_file'];
+        else
+            $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
         $this->runtime = new Runtime($bootstrap);
         $this->task = $this->runtime->run(function ($on_first, $tasks, $tasks_crontab, $tasks_timeout) use ($channel_name) {
             try {

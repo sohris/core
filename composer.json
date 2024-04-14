@@ -1,30 +1,30 @@
 {
-    "name": "sohris/core",
-    "license": "MIT",
-    "version": "0.4.6",
-    "authors": [
-        {
-            "name": "Rodrigo Danieli",
-            "email": "rodri.merlucci@gmail.com"
-        }
-    ],
-    "require": {
-        "react/event-loop": "^1.2.0",
-        "react/stream": "^1.2.0",
-        "evenement/evenement": "^3.0.0",
-        "monolog/monolog": "^2.3.5",
-        "react/promise": "^2.9",
-        "mtdowling/cron-expression": "^1.2",
-        "symfony/console": "^5.4",
-        "symfony/symfony": "^5.4"
-    },
-    "bin": [
-      "bin/sohris"
-    ],
-    "autoload": {
-      "psr-4": {
-        "Sohris\\Core\\": "src/",
-        "Test\\": "tests/"
-      }
+  "name": "sohris/core",
+  "license": "MIT",
+  "version": "0.4.7",
+  "authors": [
+    {
+      "name": "Rodrigo Danieli",
+      "email": "rodri.merlucci@gmail.com"
     }
+  ],
+  "require": {
+    "react/event-loop": "^1.2.0",
+    "react/stream": "^1.2.0",
+    "evenement/evenement": "^3.0.0",
+    "monolog/monolog": "^2.3.5",
+    "react/promise": "^2.9",
+    "mtdowling/cron-expression": "^1.2",
+    "symfony/console": "^5.4",
+    "symfony/symfony": "^5.4"
+  },
+  "bin": [
+    "bin/sohris"
+  ],
+  "autoload": {
+    "psr-4": {
+      "Sohris\\Core\\": "src/",
+      "Test\\": "tests/"
+    }
+  }
 }
