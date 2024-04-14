@@ -35,7 +35,6 @@ class Logger extends MonologLogger
             $this->log_path = realpath($configs['log_folder']);
         }
 
-        $file = $this->log_path . "/" . $this->component_name;
         $this->createLogFiles();
 
         parent::__construct($component_name);
@@ -72,9 +71,10 @@ class Logger extends MonologLogger
             }
         }
 
-        $stream = new StreamHandler($file, $level);
+        $stream = new StreamHandler($this->log_path . "/logger.log", $level);
         $stream->setFormatter($formatter);
-        $this->setHandlers([$stream, new ConsoleHandler(Server::getOutput())]);
+        $error_log = new StreamHandler($this->log_path . "/error.log", MonologLogger::ERROR);
+        $this->setHandlers([$stream, $error_log, new ConsoleHandler(Server::getOutput())]);
     }
 
     private function createLogFiles()
