@@ -20,10 +20,6 @@ class Logger extends MonologLogger
 
     private $log_path = './';
     private $component_name = "";
-    private $stream;
-    private $readable_stream;
-
-
 
     public function __construct(string $component_name = 'Core')
     {
@@ -39,7 +35,7 @@ class Logger extends MonologLogger
 
         parent::__construct($component_name);
 
-        $formatter = new LineFormatter(self::LOG_FORMAT, self::DATE_FORMAT);
+        $formatter = new LineFormatter(null, self::DATE_FORMAT);
         $level = MonologLogger::ALERT;
 
         if (isset($configs['log_level'])) {
@@ -79,8 +75,12 @@ class Logger extends MonologLogger
 
     private function createLogFiles()
     {
-        if (!is_file($this->log_path . "/" . $this->component_name)) {
-            touch($this->log_path . "/" . $this->component_name);
+        if (!is_file($this->log_path . "/logger.log")) {
+            touch($this->log_path . "/logger.log");
+        }
+
+        if (!is_file($this->log_path . "/error.log")) {
+            touch($this->log_path . "/error.log");
         }
     }
 
