@@ -2,6 +2,7 @@
 
 namespace Sohris\Core;
 
+use Exception;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger as MonologLogger;
@@ -9,6 +10,7 @@ use React\Stream\ReadableResourceStream;
 use Sohris\Core\Exceptions\ServerException;
 use Sohris\Core\Utils;
 use Symfony\Bridge\Monolog\Handler\ConsoleHandler;
+use Throwable;
 
 class Logger extends MonologLogger
 {
@@ -80,5 +82,17 @@ class Logger extends MonologLogger
         if (!is_file($this->log_path . "/" . $this->component_name)) {
             touch($this->log_path . "/" . $this->component_name);
         }
+    }
+
+    public function exception(Exception $e)
+    {
+        $message = "Code: " . $e->getCode() . " - Message: " . $e->getMessage() . " - File: " . $e->getFile() . "(" . $e->getLine() . ")";
+        $this->error($message);
+    }
+
+    public function throwable(Throwable $e)
+    {
+        $message = "Code: " . $e->getCode() . " - Message: " . $e->getMessage() . " - File: " . $e->getFile() . "(" . $e->getLine() . ")";
+        $this->error($message);
     }
 }
