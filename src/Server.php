@@ -150,9 +150,14 @@ class Server
 
     public static function getOutput()
     {
-        if(isset(self::$output))
+        if(!isset(self::$output))
             return new ConsoleOutput(self::$verbose);
         return self::$output;
+    }
+
+    public static function setOutput(OutputInterface $output)
+    {
+        self::$output = $output;
     }
 
 }
