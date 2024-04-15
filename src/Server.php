@@ -38,7 +38,7 @@ class Server
 
     private static $root_dir = './';
 
-    private static OutputInterface $output;
+    private static $output;
 
     private static $verbose = ConsoleOutput::VERBOSITY_NORMAL;
 
