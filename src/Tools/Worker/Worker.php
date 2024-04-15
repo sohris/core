@@ -155,11 +155,10 @@ class Worker
             $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
 
         $this->runtime = new Runtime($bootstrap);
-        $this->task = $this->runtime->run(function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $output) use ($channel_name) {
+        $this->task = $this->runtime->run(function ($on_first, $tasks, $tasks_crontab, $tasks_timeout) use ($channel_name) {
             try {
                 $server = Server::getServer();
                 $server->loadServer();
-                $server->setOutput($output);
                 $createTimers = function () use ($tasks, $tasks_crontab, $tasks_timeout, $channel_name) {
                     foreach ($tasks as $calls) {
                         if (!array_key_exists('timer', $calls)) continue;
@@ -207,7 +206,7 @@ class Worker
             } catch (Throwable $e) {
                 ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
             }
-        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout, Server::getOutput()]);
+        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout]);
         $this->stage = 'running';
     }
 
