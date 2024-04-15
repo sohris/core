@@ -72,9 +72,8 @@ class Server
         }
     }
 
-
     public function run()
-    {
+    {        
         $this->loadServer();
         $this->logger = new Logger();
         $this->executeInstallInAllComponents();

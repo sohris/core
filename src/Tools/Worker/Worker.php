@@ -9,8 +9,10 @@ use parallel\Runtime;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
+use Sohris\Core\Logger;
 use Sohris\Core\Server;
 use Sohris\Core\Utils;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Throwable;
 
 class Worker
@@ -35,6 +37,7 @@ class Worker
     private static $timers = [];
     private static $cron_timers = [];
     private $last_interaction = 0;
+    private static $logger;
 
     /**
      * @var LoopInterface
@@ -44,7 +47,7 @@ class Worker
     public function __construct()
     {
         self::$id++;
-
+        self::$logger = new Logger("CoreWorker");
         $this->channel_name = sha1(self::$id . time());
         $this->stage = 'loaded';
         ChannelController::on($this->channel_name, 'error', function ($err_info) {
@@ -57,7 +60,6 @@ class Worker
         Loop::addPeriodicTimer(5, function () {
             if (!$this->task) return;
             if ($this->task->done() && $this->stay_alive) {
-
                 try {
                     $this->task->value();
                 } catch (Throwable $e) {
@@ -66,12 +68,11 @@ class Worker
                     $this->err_file = $e->getFile();
                     $this->err_line = $e->getLine();
                     $this->err_msg = $e->getMessage();
-                    $this->err_trace = array_map(fn ($e) => ["file" => $e['file'], "line" => $e['line']], array_slice($e->getTrace(), 0, 5));
+                    $this->err_trace = array_map(fn ($e2) => ["file" => $e2['file'], "line" => $e2['line']], array_slice($e->getTrace(), 0, 5));
                 }
                 $error = $this->getLastError();
                 unset($error['trace']);
                 ChannelController::send($this->channel_name, 'restart', $error);
-
                 $this->stage = "death";
                 $this->restart();
             }
@@ -155,10 +156,17 @@ class Worker
             $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
 
         $this->runtime = new Runtime($bootstrap);
-        $this->task = $this->runtime->run(function ($on_first, $tasks, $tasks_crontab, $tasks_timeout) use ($channel_name) {
+        $output = Server::getOutput();
+        $params_output = [
+            "verbose" => $output->getVerbosity(),
+            "formatter" => $output->getFormatter()
+        ];
+        $this->task = $this->runtime->run(static function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $params_output) use ($channel_name) {
+            self::$logger = new Logger("RuntimeWorker");
             try {
                 $server = Server::getServer();
                 $server->loadServer();
+                $server->setOutput(new ConsoleOutput($params_output['verbose'],null, $params_output['formatter']));
                 $createTimers = function () use ($tasks, $tasks_crontab, $tasks_timeout, $channel_name) {
                     foreach ($tasks as $calls) {
                         if (!array_key_exists('timer', $calls)) continue;
@@ -183,14 +191,19 @@ class Worker
                     }
                 };
                 ChannelController::on($channel_name . "_controller", 'stop', function () {
+                    self::$logger->debug("Stopping");
                     array_walk(self::$timers, fn ($timer) => self::$loop->cancelTimer($timer));
                     array_walk(self::$cron_timers, fn ($timer) => self::$loop->cancelTimer($timer));
                     self::$timers = [];
                 });
                 ChannelController::on($channel_name . "_controller", 'start', function () use ($createTimers) {
+
+                    self::$logger->debug("Starting");
                     $createTimers();
                 });
                 ChannelController::on($channel_name . "_controller", 'kill', function () {
+
+                    self::$logger->debug("Killing");
                     exit;
                 });
                 if (!self::$first) {
@@ -202,11 +215,13 @@ class Worker
                 $createTimers();
                 self::$loop->run();
             } catch (Exception $e) {
+                self::$logger->exception($e);
                 ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
             } catch (Throwable $e) {
+                self::$logger->throwable($e);
                 ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
             }
-        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout]);
+        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout, $params_output]);
         $this->stage = 'running';
     }
 
