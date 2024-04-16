@@ -5,6 +5,7 @@ namespace Sohris\Core;
 use Evenement\EventEmitter;
 use Exception;
 use React\EventLoop\Loop;
+use Sohris\Core\Component\Component;
 use Sohris\Core\Exceptions\ServerException;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -45,6 +46,8 @@ class Server
     {
         self::$server = $this;
         self::$output = $output;
+        
+        $this->logger = new Logger();
         $this->loop = Loop::get();
         $this->events = new EventEmitter;
         $this->start = time();
@@ -53,28 +56,33 @@ class Server
 
     private function loadComponents()
     {
+        $this->logger->debug("Loading Components");
         $classes = Loader::getClassesWithParent(self::COMPONENT_NAME);
         foreach ($classes as $class) {
+            $this->logger->debug("Loaging Component $class");
             $this->components[sha1($class)] = new $class;
         }
         $this->events->emit('components.loaded');
+        $this->logger->info('Components Loaded [' . count($classes) . ']');
     }
 
     private function executeInstallInAllComponents()
     {
         try {
+            $this->logger->debug("Install Components");
             foreach ($this->components as $component) {
+                $this->logger->debug("Install Component " . get_class($component));
                 $component->install();
             }
         } catch (\Throwable $e) {
-            $this->logger->critical($e->getMessage());
+            $this->logger->throwable($e);
         }
+        $this->logger->info("Components Installed");
     }
 
     public function run()
     {
         $this->loadServer();
-        $this->logger = new Logger();
         $this->executeInstallInAllComponents();
         $this->events->emit("components.installed");
 
@@ -94,12 +102,16 @@ class Server
     private function executeStartInAllComponents()
     {
         try {
+
+            $this->logger->debug("Starting Components");
             foreach ($this->components as $component) {
+                $this->logger->debug("Start Component " . get_class($component));
                 $component->start();
             }
         } catch (\Throwable $e) {
-            $this->logger->critical($e->getMessage());
+            $this->logger->throwable($e);
         }
+        $this->logger->info("Components Installed");
     }
 
     public function on(string $event, callable $func)
