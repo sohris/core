@@ -154,7 +154,10 @@ class Worker
             $bootstrap = $configs['bootstrap_file'];
         else
             $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
-
+        if(!is_file($bootstrap)){
+            self::$logger->info("Can't open bootstrap file ($bootstrap)");
+            $bootstrap = null;
+        }
         $this->runtime = new Runtime($bootstrap);
         $output = Server::getOutput();
         $params_output = [

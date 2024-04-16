@@ -22,6 +22,8 @@ class Run extends Command
     {
         $this
             ->setName("run")
+            ->addArgument('dir', InputArgument::REQUIRED, 'Root Dir of Project')
+            ->addArgument("include_files", InputArgument::IS_ARRAY, "Files to include in process")
             ->setDescription('Execute a Sohris Server');
     }
 
@@ -31,10 +33,13 @@ class Run extends Command
             throw new \LogicException('This command accepts only an instance of "ConsoleOutputInterface".');
         }
 
+        if ($input->hasArgument("inclued_files"))
+            foreach ($input->getArgument("inclued_files") as $file) {
+                include $file;
+            }
         $server = new Server($output);
-        $server->setRootDir(".");
+        $server->setRootDir($input->getArgument("dir"));
         $server->run();
-        
         return Command::SUCCESS;
     }
 }

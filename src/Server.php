@@ -5,7 +5,6 @@ namespace Sohris\Core;
 use Evenement\EventEmitter;
 use Exception;
 use React\EventLoop\Loop;
-use Sohris\Core\Component\Component;
 use Sohris\Core\Exceptions\ServerException;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -73,7 +72,7 @@ class Server
     }
 
     public function run()
-    {        
+    {
         $this->loadServer();
         $this->logger = new Logger();
         $this->executeInstallInAllComponents();
@@ -117,7 +116,9 @@ class Server
 
     public function setRootDir(string $path)
     {
-        self::$root_dir = realpath($path);
+        if (!is_dir($path))
+            throw new ServerException("Path \"$path\" is not a dir");
+        self::$root_dir = $path;
     }
 
     public function getComponent(string $component_name): ComponentControl
@@ -149,7 +150,7 @@ class Server
 
     public static function getOutput()
     {
-        if(!isset(self::$output))
+        if (!isset(self::$output))
             return new ConsoleOutput(self::$verbose);
         return self::$output;
     }
@@ -158,5 +159,4 @@ class Server
     {
         self::$output = $output;
     }
-
 }

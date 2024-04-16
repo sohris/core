@@ -58,17 +58,17 @@ final class ChannelController
 
         if (!array_key_exists($channel_name, self::$channels)) return;
         self::$event_controller->addChannel(self::$channels[$channel_name]);
+        $value = unserialize($event->value);
+        if (!array_key_exists('event_name', $value)) return;
 
-        if (!array_key_exists('event_name', $event->value)) return;
-
-        $event_name = $event->value['event_name'];
+        $event_name = $value['event_name'];
         $args = [];
 
-        if (array_key_exists('args', $event->value))
-            $args = $event->value['args'];
+        if (array_key_exists('args', $value))
+            $args = $value['args'];
         if (
             !array_key_exists($channel_name, self::$listeners) ||
-            !array_key_exists($event->value['event_name'], self::$listeners[$channel_name])
+            !array_key_exists($value['event_name'], self::$listeners[$channel_name])
         ) return;
 
         foreach (self::$listeners[$channel_name][$event_name] as $event) {
@@ -84,7 +84,7 @@ final class ChannelController
             $channel = Channel::open($channel_name);
         }
 
-        $channel->send(['event_name' => $event_name, "args" => $args]);
+        $channel->send(serialize(['event_name' => $event_name, "args" => $args]));
         // $channel->close();
     }
 
