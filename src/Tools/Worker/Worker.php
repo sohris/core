@@ -158,18 +158,21 @@ class Worker
             self::$logger->info("Can't open bootstrap file ($bootstrap)");
             $bootstrap = null;
         }
+
         $this->runtime = new Runtime($bootstrap);
+
         $output = Server::getOutput();
+
         $params_output = [
-            "verbose" => $output->getVerbosity(),
-            "formatter" => $output->getFormatter()
+            "verbose" => $output->getVerbosity()
         ];
-        $this->task = $this->runtime->run(static function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $params_output) use ($channel_name) {
+        $this->task = $this->runtime->run(static function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $params_output,$root_dir) use ($channel_name) {
             self::$logger = new Logger("RuntimeWorker");
             try {
                 $server = Server::getServer();
+                $server->setRootDir($root_dir);
                 $server->loadServer();
-                $server->setOutput(new ConsoleOutput($params_output['verbose'],null, $params_output['formatter']));
+                $server->setOutput(new ConsoleOutput($params_output['verbose']));
                 $createTimers = function () use ($tasks, $tasks_crontab, $tasks_timeout, $channel_name) {
                     foreach ($tasks as $calls) {
                         if (!array_key_exists('timer', $calls)) continue;
@@ -224,7 +227,7 @@ class Worker
                 self::$logger->throwable($e);
                 ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
             }
-        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout, $params_output]);
+        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout, $params_output, Server::getRootDir()]);
         $this->stage = 'running';
     }
 
