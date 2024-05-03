@@ -192,7 +192,7 @@ class Utils
             if (preg_match('!!u', $string)) {
                 return $string;
             } else {
-                return utf8_encode($string);
+                return mb_convert_encoding($string, 'UTF-8', mb_list_encodings());
             }
 
         }
@@ -201,7 +201,7 @@ class Utils
         if ($reverse == 1) {
 
             if (preg_match('!!u', $string)) {
-                return utf8_decode($string);
+                return mb_convert_encoding($string, 'ISO-8859-1', 'UTF-8');
             } else {
                 return $string;
             }
