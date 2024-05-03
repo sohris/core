@@ -70,7 +70,9 @@ class Logger extends MonologLogger
         $stream = new StreamHandler($this->log_path . "/logger.log", $level);
         $stream->setFormatter($formatter);
         $error_log = new StreamHandler($this->log_path . "/error.log", MonologLogger::ERROR);
-        $this->setHandlers([$stream, $error_log, new ConsoleHandler(Server::getOutput())]);
+        $output = Server::getOutput();
+        if (!$output) $output = null;
+        $this->setHandlers([$stream, $error_log, new ConsoleHandler($output)]);
     }
 
     private function createLogFiles()
