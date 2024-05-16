@@ -84,7 +84,7 @@ final class ChannelController
             $channel = Channel::open($channel_name);
         }
 
-        $channel->send(serialize(['event_name' => $event_name, "args" => $args]));
+        $channel->send(serialize(['event_name' => $event_name, "args" => self::normalize($args)]));
         // $channel->close();
     }
 
@@ -100,4 +100,24 @@ final class ChannelController
         self::$listeners[$channel_name][$event_name][] = $callback;
     }
 
+    private static function normalize($arg)
+    {
+        $data = null;
+        if (is_array($arg)) {
+            $data = [];
+            foreach ($arg as $key => $a)
+                $data[$key] = self::normalize($a);
+        }
+
+        if (is_object($arg)) {
+            try {
+                serialize($arg);
+                $data = $arg;
+            } catch (Exception $e) {
+                $data = get_class($arg);
+            }
+        }
+
+        return $data;
+    }
 }
