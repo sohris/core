@@ -135,7 +135,7 @@ class Worker
     public function restart()
     {
         if ($this->stage == 'running')
-            ChannelController::send($this->channel_name . "_controller", 'kill');
+            ChannelController::send($this->channel_name . "_controller", 'kill',["by" => "restart()", "backtrace" => debug_backtrace(2,5)]);
         $this->stage = 'restarted';
         $this->run();
     }
@@ -154,7 +154,7 @@ class Worker
             $bootstrap = $configs['bootstrap_file'];
         else
             $bootstrap = Server::getRootDir() . DIRECTORY_SEPARATOR . "bootstrap.php";
-        if(!is_file($bootstrap)){
+        if (!is_file($bootstrap)) {
             self::$logger->info("Can't open bootstrap file ($bootstrap)");
             $bootstrap = null;
         }
@@ -166,7 +166,7 @@ class Worker
         $params_output = [
             "verbose" => $output->getVerbosity()
         ];
-        $this->task = $this->runtime->run(static function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $params_output,$root_dir) use ($channel_name) {
+        $this->task = $this->runtime->run(static function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $params_output, $root_dir) use ($channel_name) {
             self::$logger = new Logger("RuntimeWorker");
             try {
                 $server = Server::getServer();
@@ -207,9 +207,8 @@ class Worker
                     self::$logger->debug("Starting");
                     $createTimers();
                 });
-                ChannelController::on($channel_name . "_controller", 'kill', function () {
-
-                    self::$logger->debug("Killing");
+                ChannelController::on($channel_name . "_controller", 'kill', function ($arg) {
+                    self::$logger->debug("Killing",$arg);
                     exit;
                 });
                 if (!self::$first) {
@@ -235,7 +234,7 @@ class Worker
     {
         if ($this->stage != 'running' && $this->stage != 'stopped') return;
         $this->stage = 'unloaded';
-        ChannelController::send($this->channel_name . "_controller", 'kill');
+        ChannelController::send($this->channel_name . "_controller", 'kill', ["by" => "kill()", "backtrace" => debug_backtrace(2,10)]);
         $this->runtime->close();
         unset($this->runtime);
     }
