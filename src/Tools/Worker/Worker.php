@@ -170,6 +170,7 @@ class Worker
             
             try {
                 $server = Server::getServer();
+                $server::hideStatus();
                 $server::setOutput(new ConsoleOutput($params_output['verbose']));
                 $server->setRootDir($root_dir);
                 $server->loadServer();

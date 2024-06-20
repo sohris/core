@@ -40,6 +40,8 @@ class Server
 
     private static $output;
 
+    private static $show_status = true;
+
     private static $verbose = ConsoleOutput::VERBOSITY_NORMAL;
 
     public function __construct(OutputInterface $output = new ConsoleOutput())
@@ -57,28 +59,28 @@ class Server
 
     private function loadComponents()
     {
-        self::$logger->debug("Loading Components");
+        $this->status("Loading Components");
         $classes = Loader::getClassesWithParent(self::COMPONENT_NAME);
         foreach ($classes as $class) {
-            self::$logger->debug("Loaging Component $class");
+            $this->status("Loaging Component $class");
             $this->components[sha1($class)] = new $class;
         }
         $this->events->emit('components.loaded');
-        self::$logger->info('Components Loaded [' . count($classes) . ']');
+        $this->status('Components Loaded [' . count($classes) . ']');
     }
 
     private function executeInstallInAllComponents()
     {
         try {
-            self::$logger->debug("Install Components");
+            $this->status("Install Components");
             foreach ($this->components as $component) {
-                self::$logger->debug("Install Component " . get_class($component));
+                $this->status("Install Component " . get_class($component));
                 $component->install();
             }
         } catch (\Throwable $e) {
             self::$logger->throwable($e);
         }
-        self::$logger->info("Components Installed");
+        $this->status("Components Installed");
     }
 
     public function run()
@@ -104,15 +106,15 @@ class Server
     {
         try {
 
-            self::$logger->debug("Starting Components");
+            $this->status("Starting Components");
             foreach ($this->components as $component) {
-                self::$logger->debug("Start Component " . get_class($component));
+                $this->status("Start Component " . get_class($component));
                 $component->start();
             }
         } catch (\Throwable $e) {
             self::$logger->throwable($e);
         }
-        self::$logger->info("Components Installed");
+        $this->status("Components Installed");
     }
 
     public function on(string $event, callable $func)
@@ -172,5 +174,16 @@ class Server
     {
         self::$output = $output;
         self::$logger = new Logger();
+    }
+
+    public static function hideStatus()
+    {
+        self::$show_status = false;
+    }
+
+    private function status($message = "")
+    {
+        if (empty($message) || !self::$show_status) return;
+        self::$logger->debug($message);
     }
 }
