@@ -167,12 +167,13 @@ class Worker
             "verbose" => $output->getVerbosity()
         ];
         $this->task = $this->runtime->run(static function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $params_output, $root_dir) use ($channel_name) {
-            self::$logger = new Logger("RuntimeWorker");
+            
             try {
                 $server = Server::getServer();
+                $server::setOutput(new ConsoleOutput($params_output['verbose']));
                 $server->setRootDir($root_dir);
                 $server->loadServer();
-                $server->setOutput(new ConsoleOutput($params_output['verbose']));
+                self::$logger = new Logger("RuntimeWorker");
                 $createTimers = function () use ($tasks, $tasks_crontab, $tasks_timeout, $channel_name) {
                     foreach ($tasks as $calls) {
                         if (!array_key_exists('timer', $calls)) continue;

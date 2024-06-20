@@ -5,6 +5,7 @@ namespace Sohris\Core;
 use Exception;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
+use Monolog\Level;
 use Monolog\Logger as MonologLogger;
 use React\Stream\ReadableResourceStream;
 use Sohris\Core\Exceptions\ServerException;
@@ -36,40 +37,40 @@ class Logger extends MonologLogger
         parent::__construct($component_name);
 
         $formatter = new LineFormatter(null, self::DATE_FORMAT);
-        $level = MonologLogger::ALERT;
+        $level = Level::Alert;
 
         if (isset($configs['log_level'])) {
             switch ($configs['log_level']) {
                 case 'debug':
-                    $level = MonologLogger::DEBUG;
+                    $level = Level::Debug;
                     break;
                 case 'info':
-                    $level = MonologLogger::INFO;
+                    $level = Level::Info;
                     break;
                 case 'notice':
-                    $level = MonologLogger::NOTICE;
+                    $level = Level::Notice;
                     break;
                 case 'warning':
-                    $level = MonologLogger::WARNING;
+                    $level = Level::Warning;
                     break;
                 case 'error':
-                    $level = MonologLogger::ERROR;
+                    $level = Level::Error;
                     break;
                 case 'critical':
-                    $level = MonologLogger::CRITICAL;
+                    $level = Level::Critical;
                     break;
                 case 'alert':
-                    $level = MonologLogger::ALERT;
+                    $level = Level::Alert;
                     break;
                 case 'emergency':
-                    $level = MonologLogger::EMERGENCY;
+                    $level = Level::Emergency;
                     break;
             }
         }
 
         $stream = new StreamHandler($this->log_path . "/logger.log", $level);
         $stream->setFormatter($formatter);
-        $error_log = new StreamHandler($this->log_path . "/error.log", MonologLogger::ERROR);
+        $error_log = new StreamHandler($this->log_path . "/error.log", Level::Error);
         $output = Server::getOutput();
         if (!$output) $output = null;
         $this->setHandlers([$stream, $error_log, new ConsoleHandler($output)]);

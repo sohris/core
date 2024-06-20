@@ -32,7 +32,7 @@ class Server
 
     private $components = array();
 
-    private $logger;
+    private static Logger $logger;
 
     private static $server;
 
@@ -42,12 +42,13 @@ class Server
 
     private static $verbose = ConsoleOutput::VERBOSITY_NORMAL;
 
-    public function __construct(OutputInterface $output = null)
+    public function __construct(OutputInterface $output = new ConsoleOutput())
     {
         self::$server = $this;
-        self::$output = $output;
-        
-        $this->logger = new Logger();
+        if (!is_null($output))
+            self::$output = $output;
+
+        self::$logger = new Logger();
         $this->loop = Loop::get();
         $this->events = new EventEmitter;
         $this->start = time();
@@ -170,5 +171,6 @@ class Server
     public static function setOutput(OutputInterface $output)
     {
         self::$output = $output;
+        self::$logger = new Logger();
     }
 }
