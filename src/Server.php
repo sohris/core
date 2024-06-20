@@ -57,28 +57,28 @@ class Server
 
     private function loadComponents()
     {
-        $this->logger->debug("Loading Components");
+        self::$logger->debug("Loading Components");
         $classes = Loader::getClassesWithParent(self::COMPONENT_NAME);
         foreach ($classes as $class) {
-            $this->logger->debug("Loaging Component $class");
+            self::$logger->debug("Loaging Component $class");
             $this->components[sha1($class)] = new $class;
         }
         $this->events->emit('components.loaded');
-        $this->logger->info('Components Loaded [' . count($classes) . ']');
+        self::$logger->info('Components Loaded [' . count($classes) . ']');
     }
 
     private function executeInstallInAllComponents()
     {
         try {
-            $this->logger->debug("Install Components");
+            self::$logger->debug("Install Components");
             foreach ($this->components as $component) {
-                $this->logger->debug("Install Component " . get_class($component));
+                self::$logger->debug("Install Component " . get_class($component));
                 $component->install();
             }
         } catch (\Throwable $e) {
-            $this->logger->throwable($e);
+            self::$logger->throwable($e);
         }
-        $this->logger->info("Components Installed");
+        self::$logger->info("Components Installed");
     }
 
     public function run()
@@ -104,15 +104,15 @@ class Server
     {
         try {
 
-            $this->logger->debug("Starting Components");
+            self::$logger->debug("Starting Components");
             foreach ($this->components as $component) {
-                $this->logger->debug("Start Component " . get_class($component));
+                self::$logger->debug("Start Component " . get_class($component));
                 $component->start();
             }
         } catch (\Throwable $e) {
-            $this->logger->throwable($e);
+            self::$logger->throwable($e);
         }
-        $this->logger->info("Components Installed");
+        self::$logger->info("Components Installed");
     }
 
     public function on(string $event, callable $func)
