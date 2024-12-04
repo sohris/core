@@ -35,7 +35,7 @@ final class ChannelController
     private static function createChannel(string $channel_name)
     {
         try {
-            self::$channels[$channel_name] = Channel::make($channel_name, Channel::Infinite);
+            self::$channels[$channel_name] = Channel::make($channel_name, 100);
         } catch (Existence $e) {
             self::$channels[$channel_name] = Channel::open($channel_name);
         }
@@ -43,7 +43,7 @@ final class ChannelController
             self::$event_controller = new Events;
             self::$loop = new Loop;
             self::$event_controller->setBlocking(false);
-            self::$loop->addPeriodicTimer(0.5, fn () => self::checkEvent());
+            self::$loop->addPeriodicTimer(0.5, fn() => self::checkEvent());
         }
         self::$event_controller->addChannel(self::$channels[$channel_name]);
     }
@@ -53,9 +53,7 @@ final class ChannelController
 
         $event = self::$event_controller->poll();
         if (!$event) return;
-
         $channel_name = $event->source;
-
         if (!array_key_exists($channel_name, self::$channels)) return;
         self::$event_controller->addChannel(self::$channels[$channel_name]);
         $value = unserialize($event->value);
@@ -97,7 +95,18 @@ final class ChannelController
         if (!array_key_exists($event_name, self::$listeners[$channel_name])) {
             self::$listeners[$channel_name][$event_name] = [];
         }
-        self::$listeners[$channel_name][$event_name][] = $callback;
+        $id = microtime();
+        self::$listeners[$channel_name][$event_name][$id] = $callback;
+        return $id;
+    }
+
+    public static function disable(string $channel_name, string $event_name, string $id)
+    {
+        if (!array_key_exists($channel_name, self::$channels)) return;
+        if (!array_key_exists($channel_name, self::$listeners)) return;
+        if (!array_key_exists($event_name, self::$listeners[$channel_name])) return;
+
+        unset(self::$listeners[$channel_name][$event_name][$id]);
     }
 
     private static function normalize($arg)

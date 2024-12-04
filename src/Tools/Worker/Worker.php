@@ -5,10 +5,13 @@ namespace Sohris\Core\Tools\Worker;
 use Cron\CronExpression;
 use DateTime;
 use Exception;
+use parallel\Channel;
 use parallel\Runtime;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
+use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 use Sohris\Core\Logger;
 use Sohris\Core\Server;
 use Sohris\Core\Utils;
@@ -26,7 +29,6 @@ class Worker
     private $callbacks_timeout = [];
     private $task;
     private $stay_alive = false;
-    private static $first = false;
     private $stage = 'unloaded';
     private $err_code = 0;
     private $err_time = 0;
@@ -34,15 +36,11 @@ class Worker
     private $err_file = '';
     private $err_line = '';
     private $err_trace = [];
-    private static $timers = [];
-    private static $cron_timers = [];
-    private $last_interaction = 0;
     private static $logger;
 
-    /**
-     * @var LoopInterface
-     */
-    private static $loop;
+    private static $stopped_id;
+    private static $killed_id;
+
 
     public function __construct()
     {
@@ -68,7 +66,7 @@ class Worker
                     $this->err_file = $e->getFile();
                     $this->err_line = $e->getLine();
                     $this->err_msg = $e->getMessage();
-                    $this->err_trace = array_map(fn ($e2) => ["file" => $e2['file'], "line" => $e2['line']], array_slice($e->getTrace(), 0, 5));
+                    $this->err_trace = array_map(fn($e2) => ["file" => $e2['file'], "line" => $e2['line']], array_slice($e->getTrace(), 0, 5));
                 }
                 $error = $this->getLastError();
                 unset($error['trace']);
@@ -126,20 +124,6 @@ class Worker
         ChannelController::on($this->channel_name, $event_name, $callback);
     }
 
-    public function stop()
-    {
-        ChannelController::send($this->channel_name . "_controller", 'stop');
-        $this->stage = 'stopped';
-    }
-
-    public function restart()
-    {
-        if ($this->stage == 'running')
-            ChannelController::send($this->channel_name . "_controller", 'kill',["by" => "restart()", "backtrace" => debug_backtrace(2,5)]);
-        $this->stage = 'restarted';
-        $this->run();
-    }
-
     public function run()
     {
         if ($this->stage == 'stopped') {
@@ -147,7 +131,6 @@ class Worker
             $this->stage = 'running';
             return;
         }
-        $channel_name = $this->channel_name;
         $configs = Utils::getConfigFiles("system");
 
         if (isset($configs['bootstrap_file']))
@@ -158,87 +141,71 @@ class Worker
             self::$logger->info("Can't open bootstrap file ($bootstrap)");
             $bootstrap = null;
         }
-
         $this->runtime = new Runtime($bootstrap);
-
-        $output = Server::getOutput();
-
-        $params_output = [
-            "verbose" => $output->getVerbosity()
-        ];
-        $this->task = $this->runtime->run(static function ($on_first, $tasks, $tasks_crontab, $tasks_timeout, $params_output, $root_dir) use ($channel_name) {
-            
-            try {
-                $server = Server::getServer();
-                $server::hideStatus();
-                $server::setOutput(new ConsoleOutput($params_output['verbose']));
-                $server->setRootDir($root_dir);
-                $server->loadServer();
-                self::$logger = new Logger("RuntimeWorker");
-                $createTimers = function () use ($tasks, $tasks_crontab, $tasks_timeout, $channel_name) {
-                    foreach ($tasks as $calls) {
-                        if (!array_key_exists('timer', $calls)) continue;
-                        self::$timers[] = self::$loop->addPeriodicTimer(
-                            $calls['timer'],
-                            fn () => $calls['callable'](
-                                fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
-                            )
-                        );
-                    }
-                    foreach ($tasks_timeout as $calls) {
-                        if (!array_key_exists('timeout', $calls)) continue;
-                        self::$timers[] = self::$loop->addTimer(
-                            $calls['timeout'],
-                            fn () => $calls['callable'](
-                                fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
-                            )
-                        );
-                    }
-                    foreach ($tasks_crontab as $key => $cron_calls) {
-                        self::reconfigureCronTimer($key, $cron_calls, $channel_name);
-                    }
-                };
-                ChannelController::on($channel_name . "_controller", 'stop', function () {
-                    self::$logger->debug("Stopping");
-                    array_walk(self::$timers, fn ($timer) => self::$loop->cancelTimer($timer));
-                    array_walk(self::$cron_timers, fn ($timer) => self::$loop->cancelTimer($timer));
-                    self::$timers = [];
-                });
-                ChannelController::on($channel_name . "_controller", 'start', function () use ($createTimers) {
-
-                    self::$logger->debug("Starting");
-                    $createTimers();
-                });
-                ChannelController::on($channel_name . "_controller", 'kill', function ($arg) {
-                    self::$logger->debug("Killing",$arg);
-                    exit;
-                });
-                if (!self::$first) {
-                    self::$first = true;
-                    self::$loop = Loop::get();
-                    if (!empty($on_first))
-                        array_walk($on_first, fn ($el) => $el(fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)));
-                }
-                $createTimers();
-                self::$loop->run();
-            } catch (Exception $e) {
-                self::$logger->exception($e);
-                ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
-            } catch (Throwable $e) {
-                self::$logger->throwable($e);
-                ChannelController::send($channel_name, 'error', ['errmsg' => $e->getMessage(), 'errcode' => $e->getCode(), 'errfile' => $e->getFile(), 'errline' => $e->getLine(), 'trace' => $e->getTrace()]);
-            }
-        }, [$this->callbacks_on_first, $this->callbacks, $this->callbacks_crontab, $this->callbacks_timeout, $params_output, Server::getRootDir()]);
+        $this->task = $this->runtime->run(static function (
+            $callbacks_on_first,
+            $callbacks,
+            $callbacks_crontab,
+            $callbacks_timeout,
+            $verbose,
+            $root_dir,
+            $channel_name
+        ) {
+            $task = new Task(
+                $callbacks_on_first,
+                $callbacks,
+                $callbacks_crontab,
+                $callbacks_timeout,
+                $verbose,
+                $root_dir,
+                $channel_name
+            );
+            $task->run();
+        }, [
+            $this->callbacks_on_first,
+            $this->callbacks,
+            $this->callbacks_crontab,
+            $this->callbacks_timeout,
+            Server::getOutput()->getVerbosity(),
+            Server::getRootDir(),
+            $this->channel_name
+        ]);
         $this->stage = 'running';
     }
 
-    public function kill()
+    public function kill($mode = "kill"): PromiseInterface
     {
-        if ($this->stage != 'running' && $this->stage != 'stopped') return;
-        $this->stage = 'unloaded';
-        ChannelController::send($this->channel_name . "_controller", 'kill', ["by" => "kill()", "backtrace" => debug_backtrace(2,10)]);
-        $this->runtime->close();
-        unset($this->runtime);
+        $def = new Deferred();
+        // if ($this->stage != 'running' && $this->stage != 'stopped')
+        if (isset(self::$killed_id))
+            ChannelController::disable($this->channel_name . "_controller", "killed", self::$killed_id);
+        self::$killed_id = ChannelController::on($this->channel_name, "killed", function () use ($def) {
+            $this->stage = 'unloaded';
+            $this->runtime->close();
+            unset($this->runtime);
+            $def->resolve(true);
+        });
+        ChannelController::send($this->channel_name . "_controller", 'kill', ["by" => "$mode()", "backtrace" => debug_backtrace(2, 10)]);
+        return $def->promise();
+    }
+
+    public function stop(): PromiseInterface
+    {
+        $def = new Deferred();
+
+        if (isset(self::$stopped_id))
+            ChannelController::disable($this->channel_name . "_controller", "stopped", self::$stopped_id);
+        self::$stopped_id = ChannelController::on($this->channel_name . "_controller", "stopped", function () use ($def) {
+            $this->stage = 'stopped';
+            $def->resolve(true);
+        });
+        ChannelController::send($this->channel_name . "_controller", 'stop');
+        return $def->promise();
+    }
+
+    public function restart()
+    {
+        return $this->kill("restart")->then(fn() => $this->run());
     }
 
     public function getStage()
@@ -246,27 +213,6 @@ class Worker
         return $this->stage;
     }
 
-    private static function reconfigureCronTimer($key, $task, $channel_name)
-    {
-        if (array_key_exists($key, self::$cron_timers) && self::$cron_timers instanceof TimerInterface) {
-            self::$loop->cancelTimer(self::$cron_timers[$key]);
-        }
-
-        $now = new DateTime();
-
-        $cron = str_replace("\\", "/", $task['crontab']);
-        $time = CronExpression::factory($cron);
-        $to_run = $time->getNextRunDate();
-
-        $diff = $to_run->getTimestamp() - $now->getTimestamp();
-        self::$cron_timers[$key] = self::$loop->addTimer($diff, function () use ($key, $task, $channel_name) {
-            \call_user_func(
-                $task['callable'],
-                fn ($event_name, $args) => ChannelController::send($channel_name, $event_name, $args)
-            );
-            self::reconfigureCronTimer($key, $task, $channel_name);
-        });
-    }
 
     public function getLastError()
     {
