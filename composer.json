@@ -1,7 +1,7 @@
 {
   "name": "sohris/core",
   "license": "MIT",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "authors": [
     {
       "name": "Rodrigo Danieli",
@@ -15,7 +15,7 @@
     "react/promise": "^3.1",
     "mtdowling/cron-expression": "^1.2",
     "symfony/console": "^7.0",
-    "symfony/symfony": "^7.0",
+    "symfony/symfony": "7.0.7",
     "monolog/monolog": "^3.6"
   },
   "bin": [
