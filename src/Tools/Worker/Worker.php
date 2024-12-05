@@ -18,6 +18,8 @@ use Sohris\Core\Utils;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Throwable;
 
+use function React\Promise\resolve;
+
 class Worker
 {
     private $runtime;
@@ -176,12 +178,12 @@ class Worker
     public function kill($mode = "kill"): PromiseInterface
     {
         $def = new Deferred();
-        // if ($this->stage != 'running' && $this->stage != 'stopped')
+        if ($this->stage != 'running' && $this->stage != 'stopped') return resolve(true);
         if (isset(self::$killed_id))
             ChannelController::disable($this->channel_name . "_controller", "killed", self::$killed_id);
         self::$killed_id = ChannelController::on($this->channel_name, "killed", function () use ($def) {
             $this->stage = 'unloaded';
-            if($this->runtime)
+            if(isset($this->runtime))
                 $this->runtime->close();
             unset($this->runtime);
             $def->resolve(true);
@@ -193,7 +195,7 @@ class Worker
     public function stop(): PromiseInterface
     {
         $def = new Deferred();
-
+        if ($this->stage != 'running') return resolve(true);
         if (isset(self::$stopped_id))
             ChannelController::disable($this->channel_name . "_controller", "stopped", self::$stopped_id);
         self::$stopped_id = ChannelController::on($this->channel_name . "_controller", "stopped", function () use ($def) {
