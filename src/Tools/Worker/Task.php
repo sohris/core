@@ -118,7 +118,7 @@ class Task
         });
 
         ChannelController::on($this->channel_name . "_controller", 'kill', function ($arg) {
-            $this->logger->debug("Killing", $arg);
+            $this->logger->debug("Killing");
             $this->stopTimers();
             ChannelController::send($this->channel_name, 'killed');
             Loop::stop();

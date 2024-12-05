@@ -181,7 +181,8 @@ class Worker
             ChannelController::disable($this->channel_name . "_controller", "killed", self::$killed_id);
         self::$killed_id = ChannelController::on($this->channel_name, "killed", function () use ($def) {
             $this->stage = 'unloaded';
-            $this->runtime->close();
+            if($this->runtime)
+                $this->runtime->close();
             unset($this->runtime);
             $def->resolve(true);
         });
